@@ -1,9 +1,10 @@
 const path = require("path");
 const CopyPlugin = require("copy-webpack-plugin");
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
   mode: "development",
-  entry: "./src/index.ts",
+  entry: "./src/index.tsx",
   output: {
     filename: "index.js",
     path: path.resolve(__dirname, "dist")
@@ -13,13 +14,16 @@ module.exports = {
   },
   devtool: "inline-source-map",
   plugins: [
-    new CopyPlugin([
+    /*new CopyPlugin([
       {
         from: "src/*.html",
         to: "",
         flatten: true
       }
-    ])
+    ])*/
+    new HtmlWebpackPlugin({
+      template: './src/index.html'
+    })
   ],
   module: {
     rules: [
