@@ -23,8 +23,9 @@ function tick() {
 }
 
 const AppState = {
-  gl: null as WebGLRenderingContext,
 }
+
+let gl: WebGLRenderingContext = null
 
 const Config: any = {
   CanvasWidth: 512,
@@ -42,7 +43,7 @@ function initWebGL() {
     return
   }
 
-  let gl: WebGLRenderingContext = 
+  gl = 
     canvas.getContext("webgl",              { antialias: true }) as WebGLRenderingContext ||
     canvas.getContext("experimental-webgl", { antialias: true }) as WebGLRenderingContext ||
     canvas.getContext("moz-webgl",          { antialias: true }) as WebGLRenderingContext ||
@@ -88,4 +89,65 @@ function generateHTML() {
                       "<code>&lt;canvas&gt;</code> element."
 
   document.getElementById(Config.MainContaierID).appendChild(canvasElem)
+}
+
+function buildShader(shaderSource: string, typeOfShader: number): WebGLShader {
+  let shader = gl.createShader(typeOfShader)
+
+  gl.shaderSource(shader, shaderSource)
+  gl.compileShader(shader)
+
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      alert(gl.getShaderInfoLog(shader)) // TODO Logger
+      return null
+  }
+
+  return shader
+}
+
+class SimpleShader {
+  vertex: WebGLShader
+  fragment: WebGLShader
+}
+
+function initShaders(vertexShaderName: string, fragmentShaderName: string): any {
+  let vertexShaderSource, fragmentShaderSource
+  vertexShaderSource = (document.getElementById(vertexShaderName) as HTMLScriptElement).text
+  fragmentShaderSource = (document.getElementById(fragmentShaderName) as HTMLScriptElement).text
+
+  let shaders = new SimpleShader()
+  shaders.vertex = buildShader(vertexShaderSource, gl.VERTEX_SHADER)
+  shaders.fragment = buildShader(fragmentShaderSource, gl.FRAGMENT_SHADER)
+
+  return shaders
+}
+
+function createProgram(vertexShader: WebGLShader, fragmentShader: WebGLShader) {
+  let program = gl.createProgram()
+
+  gl.attachShader(program, vertexShader)
+  gl.attachShader(program, fragmentShader)
+  gl.linkProgram(program)
+
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      // TODO LOGGER
+      console.log("LINKING ERROR!")
+      console.log(gl.getProgramInfoLog(program))
+      gl.deleteProgram(program)
+
+      return null
+  }
+
+  if (Config.Debug) {
+      gl.validateProgram(program)
+
+      if (!gl.getProgramParameter(program, gl.VALIDATE_STATUS)) {
+          // TODO LOGGER
+          console.log("VALIDATION ERROR!")
+          gl.deleteProgram(program)
+          return null
+      }
+  }
+
+  return program
 }
