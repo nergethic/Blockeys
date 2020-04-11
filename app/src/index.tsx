@@ -55,8 +55,6 @@ function initWebGL() {
       return
     }
 
-    AppState.gl = gl
-
     let extensions = gl.getSupportedExtensions()
     console.log(extensions) // TODO: turn on some of them
 
@@ -76,8 +74,6 @@ function initWebGL() {
     gl.clearColor(0, 0, 0, 1)
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 }
-
-
 
 function generateHTML() {
   let canvasElem: HTMLCanvasElement = document.createElement<"canvas">("canvas")
