@@ -15,6 +15,41 @@ ReactDOM.render (
 window.onload = () => {
   generateHTML()
   initWebGL()
+  
+  // INIT SHADERS
+  let simplestShader = initShaders("vertex", "fragment")
+  let program = createProgram(simplestShader.vertex, simplestShader.fragment)
+  gl.useProgram(program)
+  let vertexPosAttribLocation = gl.getAttribLocation(program, "a_VertexPos")
+  if (vertexPosAttribLocation < 0) {
+    alert("attrib not found!")
+    return
+  }
+  
+  let buffer = gl.createBuffer()
+  gl.enableVertexAttribArray(vertexPosAttribLocation)
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+    -0.2, 0, 0,
+    0, 1, 0.0,
+    0.2, 0.0, 0.0,
+    0.5, 0.0, 0.0,
+    0.7, 1.0, 0.0,
+    0.8, 0.0, 0.0]), gl.STATIC_DRAW) // TODO array
+
+    gl.vertexAttribPointer(
+      vertexPosAttribLocation,          // location
+      3, // size (elements per vertex)
+      gl.FLOAT,                         // type
+      false,                            // normalize
+      0,                                // stride, number of elements per vertex
+      0                                 // offset
+  )
+
+  gl.drawArrays(gl.TRIANGLES, 0, 3)
+  gl.drawArrays(gl.TRIANGLES, 3, 3)
+
   tick()
 }
 
@@ -71,7 +106,7 @@ function initWebGL() {
     gl.viewport(0, 0, Config.CanvasWidth, Config.CanvasHeight)
     gl.scissor(0, 0, Config.CanvasWidth, Config.CanvasHeight)
     
-    gl.clearColor(0, 0, 0, 1)
+    gl.clearColor(1, 0, 0, 1)
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 }
 

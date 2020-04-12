@@ -10,5 +10,26 @@
     <div id="root"> 
 
     </div>
+
+  </script>
+
+  <script id="vertex" type="x-shader/x-vertex">
+    attribute vec3 a_VertexPos;
+
+    void main() {
+      gl_Position = vec4(a_VertexPos, 1.0);
+    }
+  </script>
+
+  <script id="fragment" type="x-shader/x-fragment">
+    precision mediump float;
+
+    void main() {
+        gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
+    }
+  </script>
   </body>
 </html>
+
+attribute - PER VERTEX DATA
+uniform   - PER SHADER DATA
