@@ -15,7 +15,62 @@ ReactDOM.render (
 window.onload = () => {
   generateHTML()
   initWebGL()
-  
+
+  tick()
+}
+
+class Clock {
+	running: boolean = false;
+	startTime: number = 0;
+	oldTime: number = 0;
+	elapsedTime: number = 0;
+
+  start() {
+      this.startTime = (performance || Date).now()
+
+      this.oldTime = this.startTime
+      this.elapsedTime = 0
+      this.running = true
+	}
+
+	stop() {
+		this.getElapsedTime()
+		this.running = false
+	}
+
+	getElapsedTime(): number {
+		this.getDt()
+		return this.elapsedTime
+	}
+
+	getDt(): number {
+		let diff = 0.0
+
+		if (!this.running) {
+			this.start()
+		}
+
+        let now = (performance || Date).now()
+
+        let dt = (now - this.oldTime) / 1000.0
+        this.oldTime = now
+
+        this.elapsedTime += dt
+
+		return dt
+	}
+}
+
+let time = 0.0
+let dt = 0.0
+let clock = new Clock()
+
+function tick() {
+  requestAnimationFrame(tick)
+
+  dt = clock.getDt()
+  time += dt;
+
   // INIT SHADERS
   let simplestShader = initShaders("vertex", "fragment")
   let program = createProgram(simplestShader.vertex, simplestShader.fragment)
@@ -25,18 +80,28 @@ window.onload = () => {
     alert("attrib not found!")
     return
   }
+
+  let colorPosAttribLocation = gl.getAttribLocation(program, "a_Color")
+  if (colorPosAttribLocation < 0) {
+    alert("attrib not found!")
+    return
+  }
+
+  let timeUniformPosition = gl.getUniformLocation(program, "iTime");
+  let resolutionUniformPosition = gl.getUniformLocation(program, "iResolution");
+
+  gl.uniform1f(timeUniformPosition, time)
+  gl.uniform2fv(resolutionUniformPosition, [512.0, 512.0]);
   
   let buffer = gl.createBuffer()
   gl.enableVertexAttribArray(vertexPosAttribLocation)
+  gl.enableVertexAttribArray(colorPosAttribLocation)
 
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
     -0.2, 0, 0,
     0, 1, 0.0,
-    0.2, 0.0, 0.0,
-    0.5, 0.0, 0.0,
-    0.7, 1.0, 0.0,
-    0.8, 0.0, 0.0]), gl.STATIC_DRAW) // TODO array
+    0.2, 0.0, 0.0]), gl.STATIC_DRAW) // TODO array
 
     gl.vertexAttribPointer(
       vertexPosAttribLocation,          // location
@@ -45,16 +110,31 @@ window.onload = () => {
       false,                            // normalize
       0,                                // stride, number of elements per vertex
       0                                 // offset
-  )
+    )
+
+    let colorBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0]), gl.STATIC_DRAW) // TODO array
+
+  gl.vertexAttribPointer(
+    colorPosAttribLocation,          // location
+    4, // size (elements per vertex)
+    gl.FLOAT,                         // type
+    false,                            // normalize
+    0,                                // stride, number of elements per vertex
+    0                                // offset
+)
+
+  gl.clearColor(0.2, 0.4, 0.1, 1)
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
   gl.drawArrays(gl.TRIANGLES, 0, 3)
-  gl.drawArrays(gl.TRIANGLES, 3, 3)
 
-  tick()
-}
-
-function tick() {
-  requestAnimationFrame(tick)
+  gl.disableVertexAttribArray(vertexPosAttribLocation)
+  gl.disableVertexAttribArray(colorPosAttribLocation)
 }
 
 const AppState = {
