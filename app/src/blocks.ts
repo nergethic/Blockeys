@@ -4,13 +4,25 @@
     //block1, block2
 //}
 
-/*
+
 class Block {
     constructor() {
 
     }
 }
 
+class Const<T> {
+    value: T
+
+    Set(newValue: T) {
+        this.value = newValue;
+        //if (this.value.type == 'd') {
+
+        //} 
+    }
+}
+
+/*
 class AddBlock extends Block {
     inputValueA: number = 0;
     inputValueB: number = 0;
@@ -68,3 +80,4 @@ function App() {
     }
 }
 */
+/*
