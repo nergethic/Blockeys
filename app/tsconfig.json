@@ -12,7 +12,8 @@
         "types": [
             "webgl2",
             "react",
-            "react-dom"
+            "react-dom",
+            "gl-matrix"
         ]
         },
         "paths": {

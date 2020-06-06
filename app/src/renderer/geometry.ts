@@ -43,7 +43,7 @@ export namespace Geometry {
         }
 
         SetVertices(vertices: Float32Array) {
-            this.SetAttribute('a_VertexPos', new BufferAttribute(vertices, vertices.length / 3));
+            this.SetAttribute('a_VertexPos', new BufferAttribute(vertices, 3));
         }
 
         GetVertices(): Float32Array {

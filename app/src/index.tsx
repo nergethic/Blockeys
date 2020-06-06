@@ -8,7 +8,7 @@ import App from './components/App';
 import {Config} from './config';
 import {AppState} from './appState';
 import {Geometry} from './renderer/geometry';
-import {mat4} from 'gl-matrix';
+import * as glm from 'gl-matrix';
 //import * as index from './index';
 //index.default.x
 
@@ -74,20 +74,102 @@ let time = 0.0
 let dt = 0.0
 let clock = new Clock()
 
+function MakeVec3(x: number, y: number, z: number) {
+  let v = glm.vec3.create();
+  glm.vec3.set(v, x, y, z);
+  return v;
+}
+
 function tick() {
   requestAnimationFrame(tick)
 
   dt = clock.getDt()
   time += dt;
 
+  // ---------- create a camera matrix
+  let view = glm.mat4.create();
+  glm.mat4.lookAt(view, MakeVec3(0, 0, 10), MakeVec3(0, 0, 0), MakeVec3(0, 1, 0))
+
+  // ---------- create a projection matrix
+  let projection = glm.mat4.create();
+  glm.mat4.perspective(projection, 0.5, Config.CanvasWidth / Config.CanvasHeight, 0.05, 1000)
+
+  let model = glm.mat4.create();
+
   let geometry = new Geometry.BufferGeometry();
   let vertices = new Float32Array([
-    -0.2, 0, 0,
-    0, 1, 0.0,
-    0.2, 0.0, 0.0]);
+    -1.0,-1.0,-1.0, // triangle 1 : begin
+    -1.0,-1.0, 1.0,
+    -1.0, 1.0, 1.0, // triangle 1 : end
+    1.0, 1.0,-1.0, // triangle 2 : begin
+    -1.0,-1.0,-1.0,
+    -1.0, 1.0,-1.0, // triangle 2 : end
+    1.0,-1.0, 1.0,
+    -1.0,-1.0,-1.0,
+    1.0,-1.0,-1.0,
+    1.0, 1.0,-1.0,
+    1.0,-1.0,-1.0,
+    -1.0,-1.0,-1.0,
+    -1.0,-1.0,-1.0,
+    -1.0, 1.0, 1.0,
+    -1.0, 1.0,-1.0,
+    1.0,-1.0, 1.0,
+    -1.0,-1.0, 1.0,
+    -1.0,-1.0,-1.0,
+    -1.0, 1.0, 1.0,
+    -1.0,-1.0, 1.0,
+    1.0,-1.0, 1.0,
+    1.0, 1.0, 1.0,
+    1.0,-1.0,-1.0,
+    1.0, 1.0,-1.0,
+    1.0,-1.0,-1.0,
+    1.0, 1.0, 1.0,
+    1.0,-1.0, 1.0,
+    1.0, 1.0, 1.0,
+    1.0, 1.0,-1.0,
+    -1.0, 1.0,-1.0,
+    1.0, 1.0, 1.0,
+    -1.0, 1.0,-1.0,
+    -1.0, 1.0, 1.0,
+    1.0, 1.0, 1.0,
+    -1.0, 1.0, 1.0,
+    1.0,-1.0, 1.0]);
   geometry.SetVertices(vertices);
 
-  let colorData = new Float32Array([
+  let colorData = new Float32Array([ // 12
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0,
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0,
     1.0, 0.0, 0.0, 1.0,
     0.0, 1.0, 0.0, 1.0,
     0.0, 0.0, 1.0, 1.0]);
@@ -99,15 +181,26 @@ function tick() {
   resolution[0] = Config.CanvasWidth;
   resolution[1] = Config.CanvasHeight;
 
+  let modelUniform = new Geometry.Uniform<glm.mat4>("iModel", Geometry.UniformType.Matrix4, model);
+  let viewUniform = new Geometry.Uniform<glm.mat4>("iView", Geometry.UniformType.Matrix4, view);
+  let projectionUniform = new Geometry.Uniform<glm.mat4>("iProjection", Geometry.UniformType.Matrix4, projection);
+
   let timeUniform = new Geometry.Uniform<number>("iTime", Geometry.UniformType.Float, time);
   let resolutionUniform = new Geometry.Uniform<Float32Array>("iResolution", Geometry.UniformType.Vector2, resolution);
   let tintColorUniform = new Geometry.Uniform<Float32Array>("iTintColor", Geometry.UniformType.Vector4, new Float32Array([Math.sin(time), 0.0, 0.0, 0.0]))
 
-  let material = new Geometry.Material("vertex-color", "fragment-color", new Geometry.BufferUniform([timeUniform, resolutionUniform, tintColorUniform]));
+  let material = new Geometry.Material("vertex-color", "fragment-color", new Geometry.BufferUniform([
+    modelUniform, viewUniform, projectionUniform,
+    timeUniform, resolutionUniform, tintColorUniform]));
   let mesh = new Geometry.Mesh( geometry, material );
 
   let tintValue = Math.sin(time) * 0.4
   material.SetUniform("iTintColor", new Float32Array([tintValue, tintValue, tintValue, 0.0]))
+
+  let scaled = glm.mat4.scale(model, model, MakeVec3(0.5, 0.5, 0.5))
+  let rotated = glm.mat4.rotateY(scaled, scaled, time)
+  //let translated = glm.mat4.translate(scaled, scaled, MakeVec3(Math.cos(time), 0, 0))
+  material.SetUniform("iModel", rotated)
 
   gl.clearColor(0.2, 0.4, 0.1, 1)
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
@@ -115,17 +208,16 @@ function tick() {
   mesh.BindAttributes();
   mesh.Draw();
 
-  /*
-  let geometry2 = new Geometry.BufferGeometry();
-  let vertices2 = new Float32Array([
-    -0.5, 0, 0,
-    -0.3, 1, 0.0,
-    -0.1, 0.0, 0.0]);
-  geometry2.SetVertices(vertices2);
-  let mesh2 = new Geometry.Mesh( geometry2, material );
+  let material2 = new Geometry.Material("vertex-color", "fragment-color", new Geometry.BufferUniform([
+    modelUniform, viewUniform, projectionUniform,
+    timeUniform, resolutionUniform, tintColorUniform]));
+  let mesh2 = new Geometry.Mesh( geometry, material2 );
+
+  let translated = glm.mat4.translate(scaled, scaled, MakeVec3(3.0 + Math.cos(time), 0, 0))
+  material2.SetUniform("iModel", translated)
+
   mesh2.BindAttributes();
   mesh2.Draw();
-  */
 
   // INIT SHADERS
   /*
@@ -223,10 +315,12 @@ function initWebGL(): WebGL2RenderingContext {
 
     gl.enable(gl.SCISSOR_TEST)
     gl.enable(gl.DEPTH_TEST)
-    //gl.cullFace(gl.FRONT)
     //gl.enable(gl.CULL_FACE)
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    gl.enable(gl.BLEND)
+    //gl.cullFace(gl.BACK)
+
+    //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    //gl.enable(gl.BLEND)
+    
     //gl.disable(gl.DEPTH_TEST);
     gl.frontFace(gl.CCW)
     gl.depthFunc(gl.LEQUAL)
@@ -265,5 +359,3 @@ function createTexture() {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 }
 */
-
-// glm::mat4 myModelMatrix = myTranslationMatrix * myRotationMatrix * myScaleMatrix;

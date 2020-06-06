@@ -1,6 +1,7 @@
 [X] material and geometry
-[] MVP
-[] generate cube, sphere, plane
+[X] MVP
+[X] generate cube
+[] generate sphere, plane
 [] lambert / phong
 [] multiple lights
 [] shader reloading
