@@ -335,19 +335,19 @@ function tick() {
 }
 
 function initWebGL(): WebGL2RenderingContext {
-  let canvas: HTMLCanvasElement = document.getElementById(Config.CanvasID) as HTMLCanvasElement
+  let renderCanvas: HTMLCanvasElement = document.getElementById(Config.RenderCanvasID) as HTMLCanvasElement
   
-  if (canvas == null) {
+  if (renderCanvas == null) {
     // TODO: logger error
     alert("error, canvas is null!")
     return
   }
 
   AppState.gl = 
-    canvas.getContext("webgl",              { antialias: true }) as WebGL2RenderingContext ||
-    canvas.getContext("experimental-webgl", { antialias: true }) as WebGL2RenderingContext ||
-    canvas.getContext("moz-webgl",          { antialias: true }) as WebGL2RenderingContext ||
-    canvas.getContext("webkit-3d",          { antialias: true }) as WebGL2RenderingContext
+    renderCanvas.getContext("webgl",              { antialias: true }) as WebGL2RenderingContext ||
+    renderCanvas.getContext("experimental-webgl", { antialias: true }) as WebGL2RenderingContext ||
+    renderCanvas.getContext("moz-webgl",          { antialias: true }) as WebGL2RenderingContext ||
+    renderCanvas.getContext("webkit-3d",          { antialias: true }) as WebGL2RenderingContext
 
     if (AppState.gl == null || AppState.gl == undefined) {
       // TODO: logger error
@@ -382,15 +382,47 @@ function initWebGL(): WebGL2RenderingContext {
 }
 
 function generateHTML() {
-  let canvasElem: HTMLCanvasElement = document.createElement<"canvas">("canvas")
-  canvasElem.id     = Config.CanvasID
-  canvasElem.width  = Config.CanvasWidth
-  canvasElem.height = Config.CanvasHeight
-  canvasElem.style.border = "1px solid #007FFF"
-  canvasElem.innerHTML = "Your browser doesn't appear to support the TODO add error alert" +
+  // webGL render canvas
+  let renderCanvasElem: HTMLCanvasElement = document.createElement<"canvas">("canvas")
+  renderCanvasElem.id     = Config.RenderCanvasID
+  renderCanvasElem.width  = Config.CanvasWidth
+  renderCanvasElem.height = Config.CanvasHeight
+  renderCanvasElem.style.border = "1px solid #007FFF"
+  renderCanvasElem.innerHTML = "Your browser doesn't appear to support the TODO add error alert" +
                       "<code>&lt;canvas&gt;</code> element."
 
-  document.getElementById(Config.MainContaierID).appendChild(canvasElem)
+  document.getElementById(Config.MainContaierID).appendChild(renderCanvasElem)
+
+  // blocks canvas
+  let blocksCanvasElem: HTMLCanvasElement = document.createElement<"canvas">("canvas")
+  blocksCanvasElem.id     = Config.BlocksCanvasID
+  blocksCanvasElem.width  = Config.CanvasWidth
+  blocksCanvasElem.height = Config.CanvasHeight
+  blocksCanvasElem.style.border = "1px solid #007FFF"
+  blocksCanvasElem.innerHTML = "Your browser doesn't appear to support the TODO add error alert" +
+                      "<code>&lt;canvas&gt;</code> element."
+
+  document.getElementById(Config.MainContaierID).appendChild(blocksCanvasElem)
+
+  let ctx = blocksCanvasElem.getContext("2d");
+  ctx.strokeStyle = "#333355";
+  let grid = 30;
+  
+  for (let y = 0; y < grid; y++) {
+    for (let x = 0; x < grid; x++) {
+      let yOffset = y*Config.CanvasHeight / grid;
+      ctx.beginPath();
+      ctx.moveTo(0, yOffset);
+      ctx.lineTo(Config.CanvasWidth, yOffset);
+      ctx.stroke();
+
+      let xOffset = y*Config.CanvasWidth / grid;
+      ctx.beginPath();
+      ctx.moveTo(xOffset, 0);
+      ctx.lineTo(xOffset, Config.CanvasHeight);
+      ctx.stroke();
+    }
+  }
 }
 
 /*
