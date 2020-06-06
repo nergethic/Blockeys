@@ -1,13 +1,13 @@
 [X] material and geometry
-[X] MVP
+[X] go into 3D - camera, MVP, matrix lib
 [X] generate cube
-[] generate sphere, plane
-[] lambert / phong
-[] multiple lights
+[X] lambert
+[] generate plane, sphere 
+[] multiple lights?
 [] shader reloading
 [] textures
 [] post processes
-[] PBR
+[] PBR?
 
 - visual blocks
   [] material
@@ -22,5 +22,3 @@
     [] adding nodes
     [] changing parameters
     [] connectiong nodes
-
-- react frontend
