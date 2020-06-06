@@ -4,6 +4,10 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
 import App from './components/App';
+
+import {Config} from './config';
+import {AppState} from './appState';
+import {Geometry} from './renderer/geometry';
 //import * as index from './index';
 //index.default.x
 
@@ -12,9 +16,13 @@ ReactDOM.render (
   document.getElementById("root")
 )
 
+let gl: WebGL2RenderingContext;
+
 window.onload = () => {
   generateHTML()
-  initWebGL()
+  gl = initWebGL()
+
+  Geometry.InitializeModule(gl)
 
   tick()
 }
@@ -22,7 +30,7 @@ window.onload = () => {
 class Clock {
 	running: boolean = false;
 	startTime: number = 0;
-	oldTime: number = 0;
+  oldTime: number = 0;
 	elapsedTime: number = 0;
 
   start() {
@@ -71,9 +79,43 @@ function tick() {
   dt = clock.getDt()
   time += dt;
 
+  let geometry = new Geometry.BufferGeometry();
+  let vertices = new Float32Array([
+    -0.2, 0, 0,
+    0, 1, 0.0,
+    0.2, 0.0, 0.0]);
+  geometry.SetVertices(vertices);
+
+  let colorData = new Float32Array([
+    1.0, 0.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 1.0,
+    0.0, 0.0, 1.0, 1.0]);
+  let colorAttribBuffer = new Geometry.BufferAttribute(colorData, 4);
+  geometry.SetAttribute('a_Color', colorAttribBuffer);
+
+  let material = new Geometry.MeshColorMaterial(new Geometry.BufferUniform());
+  let mesh = new Geometry.Mesh( geometry, material );
+
+  gl.clearColor(0.2, 0.4, 0.1, 1)
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+  
+  mesh.BindAttributes();
+  mesh.Draw();
+
+  let geometry2 = new Geometry.BufferGeometry();
+  let vertices2 = new Float32Array([
+    -0.5, 0, 0,
+    -0.3, 1, 0.0,
+    -0.1, 0.0, 0.0]);
+  geometry2.SetVertices(vertices2);
+  let mesh2 = new Geometry.Mesh( geometry2, material );
+  mesh2.BindAttributes();
+  mesh2.Draw();
+
   // INIT SHADERS
-  let simplestShader = initShaders("vertex", "fragment")
-  let program = createProgram(simplestShader.vertex, simplestShader.fragment)
+  /*
+  let simplestShader = Geometry.Material.InitShaders("vertex-color", "fragment-fbm")
+  let program = Geometry.Material.CreateProgram(simplestShader.vertex, simplestShader.fragment)
   gl.useProgram(program)
   let vertexPosAttribLocation = gl.getAttribLocation(program, "a_VertexPos")
   if (vertexPosAttribLocation < 0) {
@@ -135,21 +177,10 @@ function tick() {
 
   gl.disableVertexAttribArray(vertexPosAttribLocation)
   gl.disableVertexAttribArray(colorPosAttribLocation)
+  */
 }
 
-const AppState = {
-}
-
-let gl: WebGLRenderingContext = null
-
-const Config: any = {
-  CanvasWidth: 512,
-  CanvasHeight: 512,
-  CanvasID: 'glCanvas',
-  MainContaierID: 'root'
-}
-
-function initWebGL() {
+function initWebGL(): WebGL2RenderingContext {
   let canvas: HTMLCanvasElement = document.getElementById(Config.CanvasID) as HTMLCanvasElement
   
   if (canvas == null) {
@@ -158,20 +189,22 @@ function initWebGL() {
     return
   }
 
-  gl = 
-    canvas.getContext("webgl",              { antialias: true }) as WebGLRenderingContext ||
-    canvas.getContext("experimental-webgl", { antialias: true }) as WebGLRenderingContext ||
-    canvas.getContext("moz-webgl",          { antialias: true }) as WebGLRenderingContext ||
-    canvas.getContext("webkit-3d",          { antialias: true }) as WebGLRenderingContext
+  AppState.gl = 
+    canvas.getContext("webgl",              { antialias: true }) as WebGL2RenderingContext ||
+    canvas.getContext("experimental-webgl", { antialias: true }) as WebGL2RenderingContext ||
+    canvas.getContext("moz-webgl",          { antialias: true }) as WebGL2RenderingContext ||
+    canvas.getContext("webkit-3d",          { antialias: true }) as WebGL2RenderingContext
 
-    if (gl == null || gl == undefined) {
+    if (AppState.gl == null || AppState.gl == undefined) {
       // TODO: logger error
       alert("Unable to initialize WebGL. Your browser may not support it.")
       return
     }
 
-    let extensions = gl.getSupportedExtensions()
+    let extensions = AppState.gl.getSupportedExtensions()
     console.log(extensions) // TODO: turn on some of them
+
+    let gl = AppState.gl;
 
     gl.enable(gl.SCISSOR_TEST)
     gl.enable(gl.DEPTH_TEST)
@@ -188,6 +221,8 @@ function initWebGL() {
     
     gl.clearColor(1, 0, 0, 1)
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+    return gl
 }
 
 function generateHTML() {
@@ -200,67 +235,6 @@ function generateHTML() {
                       "<code>&lt;canvas&gt;</code> element."
 
   document.getElementById(Config.MainContaierID).appendChild(canvasElem)
-}
-
-function buildShader(shaderSource: string, typeOfShader: number): WebGLShader {
-  let shader = gl.createShader(typeOfShader)
-
-  gl.shaderSource(shader, shaderSource)
-  gl.compileShader(shader)
-
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      alert(gl.getShaderInfoLog(shader)) // TODO Logger
-      return null
-  }
-
-  return shader
-}
-
-class SimpleShader {
-  vertex: WebGLShader
-  fragment: WebGLShader
-}
-
-function initShaders(vertexShaderName: string, fragmentShaderName: string): any {
-  let vertexShaderSource, fragmentShaderSource
-  vertexShaderSource = (document.getElementById(vertexShaderName) as HTMLScriptElement).text
-  fragmentShaderSource = (document.getElementById(fragmentShaderName) as HTMLScriptElement).text
-
-  let shaders = new SimpleShader()
-  shaders.vertex = buildShader(vertexShaderSource, gl.VERTEX_SHADER)
-  shaders.fragment = buildShader(fragmentShaderSource, gl.FRAGMENT_SHADER)
-
-  return shaders
-}
-
-function createProgram(vertexShader: WebGLShader, fragmentShader: WebGLShader) {
-  let program = gl.createProgram()
-
-  gl.attachShader(program, vertexShader)
-  gl.attachShader(program, fragmentShader)
-  gl.linkProgram(program)
-
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      // TODO LOGGER
-      console.log("LINKING ERROR!")
-      console.log(gl.getProgramInfoLog(program))
-      gl.deleteProgram(program)
-
-      return null
-  }
-
-  if (Config.Debug) {
-      gl.validateProgram(program)
-
-      if (!gl.getProgramParameter(program, gl.VALIDATE_STATUS)) {
-          // TODO LOGGER
-          console.log("VALIDATION ERROR!")
-          gl.deleteProgram(program)
-          return null
-      }
-  }
-
-  return program
 }
 
 /*
@@ -276,3 +250,5 @@ function createTexture() {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 }
 */
+
+// glm::mat4 myModelMatrix = myTranslationMatrix * myRotationMatrix * myScaleMatrix;
