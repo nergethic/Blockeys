@@ -39,11 +39,16 @@
     attribute vec3 a_VertexPos;
     attribute vec4 a_Color;
 
+    uniform mat4 model;
+    uniform mat4 view;
+    uniform mat4 projection;
+
     varying vec4 colorOut;
 
     void main() {
       colorOut = a_Color;
-      gl_Position = vec4(a_VertexPos, 1.0);
+      vec4 newPosition = projection * view * modelPosition * vec4((a_position), 1.0);
+      gl_Position = newPosition;
     }
   </script>
 
@@ -51,7 +56,6 @@
     precision mediump float;
 
     uniform float iTime;
-    //uniform vec2 iResolution;
 
     varying vec4 colorOut;
 

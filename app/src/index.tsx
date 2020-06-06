@@ -8,6 +8,7 @@ import App from './components/App';
 import {Config} from './config';
 import {AppState} from './appState';
 import {Geometry} from './renderer/geometry';
+import {mat4} from 'gl-matrix';
 //import * as index from './index';
 //index.default.x
 
@@ -91,6 +92,7 @@ function tick() {
     0.0, 1.0, 0.0, 1.0,
     0.0, 0.0, 1.0, 1.0]);
   let colorAttribBuffer = new Geometry.BufferAttribute(colorData, 4);
+  
   geometry.SetAttribute('a_Color', colorAttribBuffer);
 
   let resolution = new Float32Array(2);
@@ -101,7 +103,7 @@ function tick() {
   let resolutionUniform = new Geometry.Uniform<Float32Array>("iResolution", Geometry.UniformType.Vector2, resolution);
   let tintColorUniform = new Geometry.Uniform<Float32Array>("iTintColor", Geometry.UniformType.Vector4, new Float32Array([Math.sin(time), 0.0, 0.0, 0.0]))
 
-  let material = new Geometry.FbmMaterial(new Geometry.BufferUniform([timeUniform, resolutionUniform, tintColorUniform]));
+  let material = new Geometry.Material("vertex-color", "fragment-color", new Geometry.BufferUniform([timeUniform, resolutionUniform, tintColorUniform]));
   let mesh = new Geometry.Mesh( geometry, material );
 
   let tintValue = Math.sin(time) * 0.4

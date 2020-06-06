@@ -1,9 +1,12 @@
 [X] material and geometry
-[] phong
+[] MVP
+[] generate cube, sphere, plane
+[] lambert / phong
 [] multiple lights
-[] PBR
 [] shader reloading
+[] textures
 [] post processes
+[] PBR
 
 - visual blocks
   [] material
@@ -12,5 +15,11 @@
   [] transform
   [] time
   [] custom vertex and fragment
+  [] generate geometry at points
+
+- editor
+    [] adding nodes
+    [] changing parameters
+    [] connectiong nodes
 
 - react frontend

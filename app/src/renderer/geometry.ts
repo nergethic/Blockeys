@@ -211,7 +211,7 @@ export namespace Geometry {
         program: WebGLProgram;
         uniforms: BufferUniform;
 
-        constructor(uniforms: BufferUniform, vertexShaderName: string, fragmentShaderName: string) {
+        constructor(vertexShaderName: string, fragmentShaderName: string, uniforms: BufferUniform) {
             let compiledShader = Material.InitShaders(vertexShaderName, fragmentShaderName)
             this.program = Geometry.Material.CreateProgram(compiledShader.vertex, compiledShader.fragment)
             this.uniforms = uniforms;
@@ -299,21 +299,21 @@ export namespace Geometry {
     export class MeshBasicMaterial extends Material {
         constructor(uniforms: BufferUniform) {
             // uniforms.MergeBufferWith();
-            super(uniforms, "simple-vertex", "simple-fragment");
+            super("simple-vertex", "simple-fragment", uniforms);
         }
     }
 
     export class MeshColorMaterial extends Material {
         constructor(uniforms: BufferUniform) {
             // uniforms.MergeBufferWith();
-            super(uniforms, "vertex-color", "fragment-color");
+            super("vertex-color", "fragment-color", uniforms);
         }
     }
 
     export class FbmMaterial extends Material {
         constructor(uniforms: BufferUniform) {
             // uniforms.MergeBufferWith();
-            super(uniforms, "vertex-color", "fragment-fbm");
+            super("vertex-color", "fragment-fbm", uniforms);
         }
     }
 
