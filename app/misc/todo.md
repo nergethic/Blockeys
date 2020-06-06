@@ -1,4 +1,4 @@
-[] material and geometry
+[X] material and geometry
 [] phong
 [] multiple lights
 [] PBR

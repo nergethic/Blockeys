@@ -93,8 +93,19 @@ function tick() {
   let colorAttribBuffer = new Geometry.BufferAttribute(colorData, 4);
   geometry.SetAttribute('a_Color', colorAttribBuffer);
 
-  let material = new Geometry.MeshColorMaterial(new Geometry.BufferUniform());
+  let resolution = new Float32Array(2);
+  resolution[0] = Config.CanvasWidth;
+  resolution[1] = Config.CanvasHeight;
+
+  let timeUniform = new Geometry.Uniform<number>("iTime", Geometry.UniformType.Float, time);
+  let resolutionUniform = new Geometry.Uniform<Float32Array>("iResolution", Geometry.UniformType.Vector2, resolution);
+  let tintColorUniform = new Geometry.Uniform<Float32Array>("iTintColor", Geometry.UniformType.Vector4, new Float32Array([Math.sin(time), 0.0, 0.0, 0.0]))
+
+  let material = new Geometry.FbmMaterial(new Geometry.BufferUniform([timeUniform, resolutionUniform, tintColorUniform]));
   let mesh = new Geometry.Mesh( geometry, material );
+
+  let tintValue = Math.sin(time) * 0.4
+  material.SetUniform("iTintColor", new Float32Array([tintValue, tintValue, tintValue, 0.0]))
 
   gl.clearColor(0.2, 0.4, 0.1, 1)
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
@@ -102,6 +113,7 @@ function tick() {
   mesh.BindAttributes();
   mesh.Draw();
 
+  /*
   let geometry2 = new Geometry.BufferGeometry();
   let vertices2 = new Float32Array([
     -0.5, 0, 0,
@@ -111,6 +123,7 @@ function tick() {
   let mesh2 = new Geometry.Mesh( geometry2, material );
   mesh2.BindAttributes();
   mesh2.Draw();
+  */
 
   // INIT SHADERS
   /*

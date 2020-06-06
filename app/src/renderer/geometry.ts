@@ -81,8 +81,124 @@ export namespace Geometry {
     }
 
     export class BufferUniform {
+        uniforms: Uniform<any>[];
+
+        constructor(uniforms?: Uniform<any>[]) {
+            if (uniforms == undefined) {
+                this.uniforms = new Array(0);
+            } else {
+                this.uniforms = uniforms;
+            }
+        }
+
         MergeBufferWith(uniforms: BufferUniform) {
             
+        }
+
+        CacheLocations(program: WebGLProgram) {
+            gl.useProgram(program);
+            this.uniforms.forEach(uniform => {
+                uniform.SetLocation(program);
+                uniform.Send();
+            });
+        }
+    }
+
+    export enum UniformType {
+        Int   = 0,
+        Float = 1,
+        Vector2,
+        Vector3,
+        Vector4,
+        Matrix3,
+        Matrix4,
+        Texture
+    }
+
+    export class Uniform<T> {
+        name: string;
+        value: T;
+        type: UniformType;
+        private location: WebGLUniformLocation;
+        SendAction: () => void;
+
+        constructor(name: string, type: UniformType, initialValue: T) {
+            this.name = name;
+            this.type = type;
+            this.value = initialValue;
+            this.SendAction = this.GetSendAction();
+        }
+
+        Set(newValue: T) {
+            this.value = newValue;
+            this.Send();
+        }
+
+        SetLocation(program: WebGLProgram) {
+            this.location = gl.getUniformLocation(program, this.name);
+            if (this.location < 0) {
+                alert("error");
+                console.log("ERROR: uniform '" + this.name + "' location couldn't be found");
+            }
+        }
+
+        Send() {
+            this.SendAction();
+        }
+
+        GetSendAction(): (() => void) {
+            let action: () => void;
+            switch (this.type) {
+                case UniformType.Matrix4: {
+                    action = () => {
+                        gl.uniformMatrix4fv(this.location, false, (this.value as unknown) as Float32Array)
+                    }
+                } break;
+        
+                case UniformType.Matrix3: {
+                    action = () => {
+                        gl.uniformMatrix3fv(this.location, false, (this.value as unknown) as Float32Array)
+                    }
+                } break;
+        
+                case UniformType.Vector4: {
+                    action = () => {
+                        gl.uniform4fv(this.location, (this.value as unknown) as Float32Array)
+                    }
+                } break;
+        
+                case UniformType.Vector3: {
+                    action = () => {
+                        gl.uniform3fv(this.location, (this.value as unknown) as Float32Array)
+                    }
+                } break;
+        
+                case UniformType.Vector2: {
+                    action = () => {
+
+                        gl.uniform2fv(this.location, (this.value as unknown) as Float32Array)
+                    }
+                } break;
+        
+                case UniformType.Float: {
+                    action = () => {
+                        gl.uniform1f(this.location, (this.value as unknown) as number)
+                    }
+                } break;
+                
+                case UniformType.Int: {
+                    action = () => {
+                        gl.uniform1i(this.location, (this.value as unknown) as number)
+                    }
+                } break;
+        
+                default: {
+                    console.log("UNKNOWN UNIFORM TYPE!")
+                    action = () => { console.log("UNKNOWN UNIFORM TYPE!") }
+                }
+            }
+
+            return action;
         }
     }
 
@@ -93,15 +209,34 @@ export namespace Geometry {
 
     export class Material {
         program: WebGLProgram;
+        uniforms: BufferUniform;
 
         constructor(uniforms: BufferUniform, vertexShaderName: string, fragmentShaderName: string) {
             let compiledShader = Material.InitShaders(vertexShaderName, fragmentShaderName)
             this.program = Geometry.Material.CreateProgram(compiledShader.vertex, compiledShader.fragment)
-            this.SetActive(); // todo
+            this.uniforms = uniforms;
+            this.uniforms.CacheLocations(this.program);
         }
 
         SetActive() {
             gl.useProgram(this.program);
+        }
+
+        SetUniform(name: string, value: any) {
+            let found: boolean = false;
+            this.uniforms.uniforms.some((uniform) => {
+                if (uniform.name == name) {
+                    uniform.Set(value);
+                    found = true;
+                    return true;
+                }
+
+                return false;
+            })
+
+            if (!found) {
+                console.log("ERROR: uniform '" + name + "' couldn't be found in this material")
+            }
         }
 
         static BuildShader(shaderSource: string, typeOfShader: number): WebGLShader {
@@ -175,6 +310,13 @@ export namespace Geometry {
         }
     }
 
+    export class FbmMaterial extends Material {
+        constructor(uniforms: BufferUniform) {
+            // uniforms.MergeBufferWith();
+            super(uniforms, "vertex-color", "fragment-fbm");
+        }
+    }
+
     export class Mesh {
         geometry: BufferGeometry;
         material: Material;
@@ -188,7 +330,7 @@ export namespace Geometry {
             for (let i = 0; i < this.geometry.attrubuteNames.length; i++) {
                 const attribName = this.geometry.attrubuteNames[i];
                 let location: number = gl.getAttribLocation(material.program, attribName);
-                
+
                 if (location < 0) {
                     console.log("ERROR: '" + attribName + "' attrib location couldn't be found!")
                 } else {

@@ -50,14 +50,14 @@
   <script id="fragment-color" type="x-shader/x-fragment">
     precision mediump float;
 
-    //uniform float iTime;
+    uniform float iTime;
     //uniform vec2 iResolution;
 
     varying vec4 colorOut;
 
     void main()
     {
-        vec4 outputColor = colorOut;
+        vec4 outputColor = colorOut + sin(iTime);
         gl_FragColor = outputColor;
     }
   </script>
@@ -67,6 +67,7 @@
 
     uniform float iTime;
     uniform vec2 iResolution;
+    uniform vec4 iTintColor;
 
     varying vec4 colorOut;
 
@@ -140,7 +141,7 @@
       vec3 col = colour(noiseTex+mask);
       col.rg += -abs(rotate(uv, 0.3*iTime+noise*10.0).xy);
 
-      vec4 outputColor = colorOut;
+      vec4 outputColor = colorOut + iTintColor;
       outputColor.xyz += col;
       gl_FragColor = outputColor;
   }
