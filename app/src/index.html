@@ -66,6 +66,64 @@
     }
   </script>
 
+  <script id="vertex-normal" type="x-shader/x-vertex">
+    attribute vec3 a_VertexPos;
+    attribute vec4 a_Color;
+    attribute vec3 a_Normal;
+
+    uniform mat4 iModel;
+    uniform mat4 iView;
+    uniform mat4 iProjection;
+
+    varying vec4 colorOut;
+    varying vec3 normalOut;
+    varying vec3 fragPosOut;
+
+    void main() {
+      colorOut = a_Color;
+      normalOut = a_Normal;
+      fragPosOut = vec3(iModel * vec4((a_VertexPos), 1.0));
+
+      vec4 newPosition = iProjection * iView * vec4(fragPosOut, 1.0);
+      gl_Position = newPosition;
+    }
+  </script>
+
+  <script id="fragment-normal" type="x-shader/x-fragment">
+    precision mediump float;
+
+    uniform vec3 iTintColor;
+    uniform float iTime;
+    uniform vec3 iLightPosition; 
+    uniform vec3 iViewPosition;
+    //uniform vec3 lightColor;
+
+    varying vec4 colorOut;
+    varying vec3 normalOut;
+    varying vec3 fragPosOut;
+
+    void main()
+    {
+        float ambientStrength = 0.1;
+        vec3 ambient = ambientStrength * vec3(1.0, 1.0, 1.0); //lightColor;
+        
+        // diffuse 
+        vec3 norm = normalize(normalOut);
+        vec3 lightDir = normalize(iLightPosition - fragPosOut);
+        float diff = max(dot(norm, lightDir), 0.0);
+        vec3 diffuse = diff * vec3(1.0, 1.0, 1.0); //lightColor;
+
+        vec3 viewDir = normalize(iViewPosition - fragPosOut);
+        vec3 reflectDir = reflect(-lightDir, norm);
+        float specularStrength = 0.9;
+        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+        vec3 specular = specularStrength * spec * vec3(1.0, 1.0, 1.0); // lightColor; 
+                
+        vec3 result = (ambient + diffuse + specular) * iTintColor; // + sin(iTime)*0.1;
+        gl_FragColor = vec4(result, colorOut.a);
+    }
+  </script>
+
   <script id="fragment-fbm" type="x-shader/x-fragment">
     precision mediump float;
 

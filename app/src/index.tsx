@@ -88,7 +88,8 @@ function tick() {
 
   // ---------- create a camera matrix
   let view = glm.mat4.create();
-  glm.mat4.lookAt(view, MakeVec3(0, 0, 10), MakeVec3(0, 0, 0), MakeVec3(0, 1, 0))
+  let cameraPosition = MakeVec3(0, 0, 10);
+  glm.mat4.lookAt(view, cameraPosition, MakeVec3(0, 0, 0), MakeVec3(0, 1, 0))
 
   // ---------- create a projection matrix
   let projection = glm.mat4.create();
@@ -98,43 +99,88 @@ function tick() {
 
   let geometry = new Geometry.BufferGeometry();
   let vertices = new Float32Array([
-    -1.0,-1.0,-1.0, // triangle 1 : begin
-    -1.0,-1.0, 1.0,
-    -1.0, 1.0, 1.0, // triangle 1 : end
-    1.0, 1.0,-1.0, // triangle 2 : begin
-    -1.0,-1.0,-1.0,
-    -1.0, 1.0,-1.0, // triangle 2 : end
-    1.0,-1.0, 1.0,
-    -1.0,-1.0,-1.0,
-    1.0,-1.0,-1.0,
-    1.0, 1.0,-1.0,
-    1.0,-1.0,-1.0,
-    -1.0,-1.0,-1.0,
-    -1.0,-1.0,-1.0,
-    -1.0, 1.0, 1.0,
-    -1.0, 1.0,-1.0,
-    1.0,-1.0, 1.0,
-    -1.0,-1.0, 1.0,
-    -1.0,-1.0,-1.0,
-    -1.0, 1.0, 1.0,
-    -1.0,-1.0, 1.0,
-    1.0,-1.0, 1.0,
-    1.0, 1.0, 1.0,
-    1.0,-1.0,-1.0,
-    1.0, 1.0,-1.0,
-    1.0,-1.0,-1.0,
-    1.0, 1.0, 1.0,
-    1.0,-1.0, 1.0,
-    1.0, 1.0, 1.0,
-    1.0, 1.0,-1.0,
-    -1.0, 1.0,-1.0,
-    1.0, 1.0, 1.0,
-    -1.0, 1.0,-1.0,
-    -1.0, 1.0, 1.0,
-    1.0, 1.0, 1.0,
-    -1.0, 1.0, 1.0,
-    1.0,-1.0, 1.0]);
-  geometry.SetVertices(vertices);
+    // Front face
+  -1.0, -1.0,  1.0,
+  1.0, -1.0,  1.0,
+  1.0,  1.0,  1.0,
+ -1.0,  1.0,  1.0,
+ 
+ // Back face
+ -1.0, -1.0, -1.0,
+ -1.0,  1.0, -1.0,
+  1.0,  1.0, -1.0,
+  1.0, -1.0, -1.0,
+ 
+ // Top face
+ -1.0,  1.0, -1.0,
+ -1.0,  1.0,  1.0,
+  1.0,  1.0,  1.0,
+  1.0,  1.0, -1.0,
+ 
+ // Bottom face
+ -1.0, -1.0, -1.0,
+  1.0, -1.0, -1.0,
+  1.0, -1.0,  1.0,
+ -1.0, -1.0,  1.0,
+ 
+ // Right face
+  1.0, -1.0, -1.0,
+  1.0,  1.0, -1.0,
+  1.0,  1.0,  1.0,
+  1.0, -1.0,  1.0,
+ 
+ // Left face
+ -1.0, -1.0, -1.0,
+ -1.0, -1.0,  1.0,
+ -1.0,  1.0,  1.0,
+ -1.0,  1.0, -1.0]);
+
+  let indexData = new Uint16Array([
+    0,  1,  2,      0,  2,  3,    // front
+    4,  5,  6,      4,  6,  7,    // back
+    8,  9,  10,     8,  10, 11,   // top
+    12, 13, 14,     12, 14, 15,   // bottom
+    16, 17, 18,     16, 18, 19,   // right
+    20, 21, 22,     20, 22, 23   // left
+  ])
+
+  let normalData = new Float32Array([
+    // Front
+    0.0,  0.0,  1.0,
+    0.0,  0.0,  1.0,
+    0.0,  0.0,  1.0,
+    0.0,  0.0,  1.0,
+
+   // Back
+    0.0,  0.0, -1.0,
+    0.0,  0.0, -1.0,
+    0.0,  0.0, -1.0,
+    0.0,  0.0, -1.0,
+
+   // Top
+    0.0,  1.0,  0.0,
+    0.0,  1.0,  0.0,
+    0.0,  1.0,  0.0,
+    0.0,  1.0,  0.0,
+
+   // Bottom
+    0.0, -1.0,  0.0,
+    0.0, -1.0,  0.0,
+    0.0, -1.0,  0.0,
+    0.0, -1.0,  0.0,
+
+   // Right
+    1.0,  0.0,  0.0,
+    1.0,  0.0,  0.0,
+    1.0,  0.0,  0.0,
+    1.0,  0.0,  0.0,
+
+   // Left
+   -1.0,  0.0,  0.0,
+   -1.0,  0.0,  0.0,
+   -1.0,  0.0,  0.0,
+   -1.0,  0.0,  0.0
+  ])
 
   let colorData = new Float32Array([ // 12
     1.0, 0.0, 0.0, 1.0,
@@ -161,25 +207,22 @@ function tick() {
     1.0, 0.0, 0.0, 1.0,
     0.0, 1.0, 0.0, 1.0,
     0.0, 0.0, 1.0, 1.0,
-    1.0, 0.0, 0.0, 1.0,
-    0.0, 1.0, 0.0, 1.0,
-    0.0, 0.0, 1.0, 1.0,
-    1.0, 0.0, 0.0, 1.0,
-    0.0, 1.0, 0.0, 1.0,
-    0.0, 0.0, 1.0, 1.0,
-    1.0, 0.0, 0.0, 1.0,
-    0.0, 1.0, 0.0, 1.0,
-    0.0, 0.0, 1.0, 1.0,
-    1.0, 0.0, 0.0, 1.0,
-    0.0, 1.0, 0.0, 1.0,
-    0.0, 0.0, 1.0, 1.0]);
+    1.0, 0.0, 0.0, 1.0]);
+
+    geometry.SetVertices(vertices);
+    geometry.SetIndices(indexData);
+    let normalAttribBuffer = new Geometry.BufferAttribute(normalData, 3);
   let colorAttribBuffer = new Geometry.BufferAttribute(colorData, 4);
   
   geometry.SetAttribute('a_Color', colorAttribBuffer);
+  geometry.SetAttribute('a_Normal', normalAttribBuffer);
 
   let resolution = new Float32Array(2);
   resolution[0] = Config.CanvasWidth;
   resolution[1] = Config.CanvasHeight;
+
+  let lightPositionUniform = new Geometry.Uniform<glm.vec3>("iLightPosition", Geometry.UniformType.Vector3, MakeVec3(0.0, Math.sin(time), 0.0));
+  let cameraPositionUniform = new Geometry.Uniform<glm.vec3>("iViewPosition", Geometry.UniformType.Vector3, cameraPosition);
 
   let modelUniform = new Geometry.Uniform<glm.mat4>("iModel", Geometry.UniformType.Matrix4, model);
   let viewUniform = new Geometry.Uniform<glm.mat4>("iView", Geometry.UniformType.Matrix4, view);
@@ -187,37 +230,41 @@ function tick() {
 
   let timeUniform = new Geometry.Uniform<number>("iTime", Geometry.UniformType.Float, time);
   let resolutionUniform = new Geometry.Uniform<Float32Array>("iResolution", Geometry.UniformType.Vector2, resolution);
-  let tintColorUniform = new Geometry.Uniform<Float32Array>("iTintColor", Geometry.UniformType.Vector4, new Float32Array([Math.sin(time), 0.0, 0.0, 0.0]))
+  let tintColorUniform = new Geometry.Uniform<Float32Array>("iTintColor", Geometry.UniformType.Vector3, new Float32Array([0.0, 1.0, 1.0]))
 
-  let material = new Geometry.Material("vertex-color", "fragment-color", new Geometry.BufferUniform([
+  let material = new Geometry.Material("vertex-normal", "fragment-normal", new Geometry.BufferUniform([
     modelUniform, viewUniform, projectionUniform,
-    timeUniform, resolutionUniform, tintColorUniform]));
+    timeUniform, resolutionUniform, tintColorUniform,
+    lightPositionUniform, cameraPositionUniform]));
   let mesh = new Geometry.Mesh( geometry, material );
 
-  let tintValue = Math.sin(time) * 0.4
-  material.SetUniform("iTintColor", new Float32Array([tintValue, tintValue, tintValue, 0.0]))
+  material.SetUniform("iTintColor", new Float32Array([0.2, 0.5, 0.0]))
 
   let scaled = glm.mat4.scale(model, model, MakeVec3(0.5, 0.5, 0.5))
-  let rotated = glm.mat4.rotateY(scaled, scaled, time)
+  //let rotated = glm.mat4.rotateY(scaled, scaled, time)
   //let translated = glm.mat4.translate(scaled, scaled, MakeVec3(Math.cos(time), 0, 0))
-  material.SetUniform("iModel", rotated)
+  material.SetUniform("iModel", scaled)
 
-  gl.clearColor(0.2, 0.4, 0.1, 1)
+  gl.clearColor(0.1, 0.3, 0.5, 1)
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+  material.SetUniform("iLightPosition", MakeVec3(Math.sin(time), 0, 3));
   
   mesh.BindAttributes();
-  mesh.Draw();
+  mesh.DrawIndexed();
 
-  let material2 = new Geometry.Material("vertex-color", "fragment-color", new Geometry.BufferUniform([
+  let material2 = new Geometry.Material("vertex-normal", "fragment-normal", new Geometry.BufferUniform([
     modelUniform, viewUniform, projectionUniform,
-    timeUniform, resolutionUniform, tintColorUniform]));
+    timeUniform, resolutionUniform, tintColorUniform,
+    lightPositionUniform, cameraPositionUniform]));
   let mesh2 = new Geometry.Mesh( geometry, material2 );
 
   let translated = glm.mat4.translate(scaled, scaled, MakeVec3(3.0 + Math.cos(time), 0, 0))
   material2.SetUniform("iModel", translated)
+  material2.SetUniform("iTintColor", new Float32Array([0.3, 0.2, 0.8]))
 
   mesh2.BindAttributes();
-  mesh2.Draw();
+  mesh2.DrawIndexed();
 
   // INIT SHADERS
   /*

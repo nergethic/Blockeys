@@ -1,5 +1,4 @@
 import {Config} from '../config';
-import {AppState} from '../appState';
 
 export namespace Geometry {
     let gl: WebGL2RenderingContext;
@@ -7,16 +6,43 @@ export namespace Geometry {
         gl = webGLRenderingState;
     }
 
+    export enum UniformType {
+        Int   = 0,
+        Float = 1,
+        Vector2,
+        Vector3,
+        Vector4,
+        Matrix3,
+        Matrix4,
+        Texture
+    }
+
+    export class Color {
+        r: number;
+        g: number;
+        b: number;
+
+        constructor(r: number, g: number, b: number) {
+            this.r = r;
+            this.g = g;
+            this.b = b;
+        }
+    }
+
     export class BufferGeometry {
         attrubuteNames: string[];
         attributes: BufferAttribute[];
         verticesAttribIndex: number;
         vertexCount: number;
+        indicesCount: number;
+        indices: Uint16Array;
+        indexBuffer: WebGLBuffer;
 
         constructor() {
             this.attrubuteNames = new Array();
             this.attributes = new Array();
             this.verticesAttribIndex = -1;
+            this.indicesCount = 0;
         }
 
         SetAttribute(attribName: string, attribData: BufferAttribute): number {
@@ -53,10 +79,19 @@ export namespace Geometry {
 
             return new Float32Array(0);
         }
-    }
 
-    export class MaterialData {
+        SetIndices(indexData: Uint16Array) {
+            this.indices = indexData;
+            this.indexBuffer = gl.createBuffer();
+            this.indicesCount = indexData.length;
 
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
+            gl.bufferData(
+                gl.ELEMENT_ARRAY_BUFFER,
+                new Uint16Array(indexData),
+                gl.STATIC_DRAW
+            );
+        }
     }
 
     export class BufferAttribute {
@@ -102,17 +137,6 @@ export namespace Geometry {
                 uniform.Send();
             });
         }
-    }
-
-    export enum UniformType {
-        Int   = 0,
-        Float = 1,
-        Vector2,
-        Vector3,
-        Vector4,
-        Matrix3,
-        Matrix4,
-        Texture
     }
 
     export class Uniform<T> {
@@ -364,37 +388,13 @@ export namespace Geometry {
         Draw() {
             gl.drawArrays(gl.TRIANGLES, 0, this.geometry.vertexCount);
         }
-    }
 
-    export class Color {
-        r: number;
-        g: number;
-        b: number;
-
-        constructor(r: number, g: number, b: number) {
-            this.r = r;
-            this.g = g;
-            this.b = b;
+        DrawIndexed() {
+            if (this.geometry.indicesCount == 0) {
+                console.log("geometry doesn't have indices")
+            }
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.geometry.indexBuffer);
+            gl.drawElements(gl.TRIANGLES, this.geometry.indicesCount, gl.UNSIGNED_SHORT, 0);
         }
-    }
-
-    export function GetTestMesh(): Mesh {
-        let geometry = new BufferGeometry();
-        let vertices = new Float32Array([
-            -1.0, -1.0,  1.0,
-            1.0, -1.0,  1.0,
-            1.0,  1.0,  1.0,
-        
-            1.0,  1.0,  1.0,
-            -1.0,  1.0,  1.0,
-            -1.0, -1.0,  1.0
-        ]);
-
-        geometry.SetVertices(vertices);
-        // geometry.SetAttribute('a_VertexPos', new BufferAttribute(vertices, 3));
-        let material = new MeshBasicMaterial(new BufferUniform());
-        let mesh = new Mesh( geometry, material );
-
-        return mesh;
     }
 }
