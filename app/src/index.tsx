@@ -20,124 +20,77 @@ ReactDOM.render (
 )
 
 let gl: WebGL2RenderingContext;
+let modelMatrix: glm.mat4;
+let geometry: Geometry.BufferGeometry;
+let material: Geometry.Material;
+let mesh: Geometry.Mesh;
 
 window.onload = () => {
   generateHTML()
   gl = initWebGL()
-
   Geometry.InitializeModule(gl)
 
-  tick()
-}
-
-class Clock {
-	running: boolean = false;
-	startTime: number = 0;
-  oldTime: number = 0;
-	elapsedTime: number = 0;
-
-  start() {
-      this.startTime = (performance || Date).now()
-
-      this.oldTime = this.startTime
-      this.elapsedTime = 0
-      this.running = true
-	}
-
-	stop() {
-		this.getElapsedTime()
-		this.running = false
-	}
-
-	getElapsedTime(): number {
-		this.getDt()
-		return this.elapsedTime
-	}
-
-	getDt(): number {
-		let diff = 0.0
-
-		if (!this.running) {
-			this.start()
-		}
-
-        let now = (performance || Date).now()
-
-        let dt = (now - this.oldTime) / 1000.0
-        this.oldTime = now
-
-        this.elapsedTime += dt
-
-		return dt
-	}
-}
-
-let time = 0.0
-let dt = 0.0
-let clock = new Clock()
-
-function MakeVec3(x: number, y: number, z: number) {
-  let v = glm.vec3.create();
-  glm.vec3.set(v, x, y, z);
-  return v;
-}
-
-function tick() {
-  requestAnimationFrame(tick)
-
-  Blocks.BlockTest();
-
-  dt = clock.getDt()
-  time += dt;
+  AppState.time = 0.0;
 
   // ---------- create a camera matrix
-  let view = glm.mat4.create();
-  let cameraPosition = MakeVec3(0, 0, 10);
-  glm.mat4.lookAt(view, cameraPosition, MakeVec3(0, 0, 0), MakeVec3(0, 1, 0))
+  AppState.viewMatrix = glm.mat4.create();
+  AppState.cameraPosition = MakeVec3(0, 0, 10);
+  glm.mat4.lookAt(AppState.viewMatrix, AppState.cameraPosition, MakeVec3(0, 0, 0), MakeVec3(0, 1, 0))
 
   // ---------- create a projection matrix
-  let projection = glm.mat4.create();
-  glm.mat4.perspective(projection, 0.5, Config.CanvasWidth / Config.CanvasHeight, 0.05, 1000)
+  AppState.projectionMatrix = glm.mat4.create();
+  glm.mat4.perspective(AppState.projectionMatrix, 0.5, Config.CanvasWidth / Config.CanvasHeight, 0.05, 1000)
 
-  let model = glm.mat4.create();
+  let resolution = new Float32Array(2);
+  resolution[0] = Config.CanvasWidth;
+  resolution[1] = Config.CanvasHeight;
+  AppState.resolution = resolution;
 
-  let geometry = new Geometry.BufferGeometry();
+  AppState.lightPositionUniform = new Geometry.Uniform<glm.vec3>("iLightPosition", Geometry.UniformType.Vector3, MakeVec3(0.0, 0.0, 0.0));
+  AppState.cameraPositionUniform = new Geometry.Uniform<glm.vec3>("iViewPosition", Geometry.UniformType.Vector3, AppState.cameraPosition);
+  AppState.viewUniform = new Geometry.Uniform<glm.mat4>("iView", Geometry.UniformType.Matrix4, AppState.viewMatrix);
+  AppState.projectionUniform = new Geometry.Uniform<glm.mat4>("iProjection", Geometry.UniformType.Matrix4, AppState.projectionMatrix);
+
+  AppState.timeUniform = new Geometry.Uniform<number>("iTime", Geometry.UniformType.Float, AppState.time);
+  AppState.resolutionUniform = new Geometry.Uniform<Float32Array>("iResolution", Geometry.UniformType.Vector2, resolution);
+
+  // mesh setup
   let vertices = new Float32Array([
     // Front face
+    -1.0, -1.0,  1.0,
+    1.0, -1.0,  1.0,
+    1.0,  1.0,  1.0,
+  -1.0,  1.0,  1.0,
+  
+  // Back face
+  -1.0, -1.0, -1.0,
+  -1.0,  1.0, -1.0,
+    1.0,  1.0, -1.0,
+    1.0, -1.0, -1.0,
+  
+  // Top face
+  -1.0,  1.0, -1.0,
+  -1.0,  1.0,  1.0,
+    1.0,  1.0,  1.0,
+    1.0,  1.0, -1.0,
+  
+  // Bottom face
+  -1.0, -1.0, -1.0,
+    1.0, -1.0, -1.0,
+    1.0, -1.0,  1.0,
   -1.0, -1.0,  1.0,
-  1.0, -1.0,  1.0,
-  1.0,  1.0,  1.0,
- -1.0,  1.0,  1.0,
- 
- // Back face
- -1.0, -1.0, -1.0,
- -1.0,  1.0, -1.0,
-  1.0,  1.0, -1.0,
-  1.0, -1.0, -1.0,
- 
- // Top face
- -1.0,  1.0, -1.0,
- -1.0,  1.0,  1.0,
-  1.0,  1.0,  1.0,
-  1.0,  1.0, -1.0,
- 
- // Bottom face
- -1.0, -1.0, -1.0,
-  1.0, -1.0, -1.0,
-  1.0, -1.0,  1.0,
- -1.0, -1.0,  1.0,
- 
- // Right face
-  1.0, -1.0, -1.0,
-  1.0,  1.0, -1.0,
-  1.0,  1.0,  1.0,
-  1.0, -1.0,  1.0,
- 
- // Left face
- -1.0, -1.0, -1.0,
- -1.0, -1.0,  1.0,
- -1.0,  1.0,  1.0,
- -1.0,  1.0, -1.0]);
+  
+  // Right face
+    1.0, -1.0, -1.0,
+    1.0,  1.0, -1.0,
+    1.0,  1.0,  1.0,
+    1.0, -1.0,  1.0,
+  
+  // Left face
+  -1.0, -1.0, -1.0,
+  -1.0, -1.0,  1.0,
+  -1.0,  1.0,  1.0,
+  -1.0,  1.0, -1.0]);
 
   let indexData = new Uint16Array([
     0,  1,  2,      0,  2,  3,    // front
@@ -213,128 +166,122 @@ function tick() {
     0.0, 0.0, 1.0, 1.0,
     1.0, 0.0, 0.0, 1.0]);
 
+    geometry = new Geometry.BufferGeometry();
     geometry.SetVertices(vertices);
     geometry.SetIndices(indexData);
     let normalAttribBuffer = new Geometry.BufferAttribute(normalData, 3);
-  let colorAttribBuffer = new Geometry.BufferAttribute(colorData, 4);
+    let colorAttribBuffer = new Geometry.BufferAttribute(colorData, 4);
   
-  geometry.SetAttribute('a_Color', colorAttribBuffer);
-  geometry.SetAttribute('a_Normal', normalAttribBuffer);
+    geometry.SetAttribute('a_Color', colorAttribBuffer);
+    geometry.SetAttribute('a_Normal', normalAttribBuffer);
 
-  let resolution = new Float32Array(2);
-  resolution[0] = Config.CanvasWidth;
-  resolution[1] = Config.CanvasHeight;
+    modelMatrix = glm.mat4.create();
+    let modelUniform = new Geometry.Uniform<glm.mat4>("iModel", Geometry.UniformType.Matrix4, modelMatrix);
+    let tintColorUniform = new Geometry.Uniform<Float32Array>("iTintColor", Geometry.UniformType.Vector3, new Float32Array([0.0, 1.0, 1.0]))
 
-  let lightPositionUniform = new Geometry.Uniform<glm.vec3>("iLightPosition", Geometry.UniformType.Vector3, MakeVec3(0.0, Math.sin(time), 0.0));
-  let cameraPositionUniform = new Geometry.Uniform<glm.vec3>("iViewPosition", Geometry.UniformType.Vector3, cameraPosition);
+    material = new Geometry.Material("vertex-normal", "fragment-normal", new Geometry.BufferUniform([
+      modelUniform, tintColorUniform,
+      AppState.viewUniform, AppState.projectionUniform,
+      AppState.timeUniform, AppState.resolutionUniform,
+      AppState.lightPositionUniform, AppState.cameraPositionUniform]));
 
-  let modelUniform = new Geometry.Uniform<glm.mat4>("iModel", Geometry.UniformType.Matrix4, model);
-  let viewUniform = new Geometry.Uniform<glm.mat4>("iView", Geometry.UniformType.Matrix4, view);
-  let projectionUniform = new Geometry.Uniform<glm.mat4>("iProjection", Geometry.UniformType.Matrix4, projection);
+    mesh = new Geometry.Mesh( geometry, material );
 
-  let timeUniform = new Geometry.Uniform<number>("iTime", Geometry.UniformType.Float, time);
-  let resolutionUniform = new Geometry.Uniform<Float32Array>("iResolution", Geometry.UniformType.Vector2, resolution);
-  let tintColorUniform = new Geometry.Uniform<Float32Array>("iTintColor", Geometry.UniformType.Vector3, new Float32Array([0.0, 1.0, 1.0]))
+  tick()
+}
 
-  let material = new Geometry.Material("vertex-normal", "fragment-normal", new Geometry.BufferUniform([
-    modelUniform, viewUniform, projectionUniform,
-    timeUniform, resolutionUniform, tintColorUniform,
-    lightPositionUniform, cameraPositionUniform]));
-  let mesh = new Geometry.Mesh( geometry, material );
+class Clock {
+	running: boolean = false;
+	startTime: number = 0;
+  oldTime: number = 0;
+	elapsedTime: number = 0;
 
-  material.SetUniform("iTintColor", new Float32Array([0.2, 0.5, 0.0]))
+  start() {
+      this.startTime = (performance || Date).now()
 
-  let scaled = glm.mat4.scale(model, model, MakeVec3(0.5, 0.5, 0.5))
-  //let rotated = glm.mat4.rotateY(scaled, scaled, time)
-  //let translated = glm.mat4.translate(scaled, scaled, MakeVec3(Math.cos(time), 0, 0))
-  material.SetUniform("iModel", scaled)
+      this.oldTime = this.startTime
+      this.elapsedTime = 0
+      this.running = true
+	}
 
-  gl.clearColor(0.1, 0.3, 0.5, 1)
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+	stop() {
+		this.getElapsedTime()
+		this.running = false
+	}
 
-  material.SetUniform("iLightPosition", MakeVec3(Math.sin(time), 0, 3));
-  
+	getElapsedTime(): number {
+		this.getDt()
+		return this.elapsedTime
+	}
+
+	getDt(): number {
+		let diff = 0.0
+
+		if (!this.running) {
+			this.start()
+		}
+
+        let now = (performance || Date).now()
+
+        let dt = (now - this.oldTime) / 1000.0
+        this.oldTime = now
+
+        this.elapsedTime += dt
+
+		return dt
+	}
+}
+
+let dt = 0.0
+let clock = new Clock()
+
+function MakeVec3(x: number, y: number, z: number) {
+  let v = glm.vec3.create();
+  glm.vec3.set(v, x, y, z);
+  return v;
+}
+
+function tick() {
+  requestAnimationFrame(tick);
+
+  dt = clock.getDt();
+  AppState.time += dt;
+
+  // Blocks.BlockTest();
+
+  //let scaled = glm.mat4.scale(modelMatrix, modelMatrix, MakeVec3(0.5, 0.5, 0.5))
+
+  //let rotated = glm.mat4.rotateY(scaled, scaled, AppState.time)
+  //let translated = glm.mat4.translate(scaled, scaled, MakeVec3(Math.cos(AppState.time), 0, 0))
+  material.SetUniform("iModel", modelMatrix);
+  material.SetUniform("iTintColor", new Float32Array([0.2, 0.5, 0.0]));
+
+  material.SetUniform("iLightPosition", MakeVec3(Math.sin(AppState.time), 0, 3));
+  material.SetUniform("iViewPosition", AppState.cameraPosition);
+  material.SetUniform("iView", AppState.viewMatrix);
+  material.SetUniform("iProjection", AppState.projectionMatrix);
+  material.SetUniform("iTime", AppState.time);
+  material.SetUniform("iResolution", AppState.resolution);
+
+  gl.clearColor(0.1, 0.3, 0.5, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
   mesh.BindAttributes();
   mesh.DrawIndexed();
 
+  /*
   let material2 = new Geometry.Material("vertex-normal", "fragment-normal", new Geometry.BufferUniform([
-    modelUniform, viewUniform, projectionUniform,
-    timeUniform, resolutionUniform, tintColorUniform,
-    lightPositionUniform, cameraPositionUniform]));
+    modelUniform, AppState.viewUniform, AppState.projectionUniform,
+    AppState.timeUniform, AppState.resolutionUniform, tintColorUniform,
+    AppState.lightPositionUniform, AppState.cameraPositionUniform]));
   let mesh2 = new Geometry.Mesh( geometry, material2 );
 
-  let translated = glm.mat4.translate(scaled, scaled, MakeVec3(3.0 + Math.cos(time), 0, 0))
+  let translated = glm.mat4.translate(scaled, scaled, MakeVec3(3.0 + Math.cos(AppState.time), 0, 0))
   material2.SetUniform("iModel", translated)
   material2.SetUniform("iTintColor", new Float32Array([0.3, 0.2, 0.8]))
 
   mesh2.BindAttributes();
   mesh2.DrawIndexed();
-
-  // INIT SHADERS
-  /*
-  let simplestShader = Geometry.Material.InitShaders("vertex-color", "fragment-fbm")
-  let program = Geometry.Material.CreateProgram(simplestShader.vertex, simplestShader.fragment)
-  gl.useProgram(program)
-  let vertexPosAttribLocation = gl.getAttribLocation(program, "a_VertexPos")
-  if (vertexPosAttribLocation < 0) {
-    alert("attrib not found!")
-    return
-  }
-
-  let colorPosAttribLocation = gl.getAttribLocation(program, "a_Color")
-  if (colorPosAttribLocation < 0) {
-    alert("attrib not found!")
-    return
-  }
-
-  let timeUniformPosition = gl.getUniformLocation(program, "iTime");
-  let resolutionUniformPosition = gl.getUniformLocation(program, "iResolution");
-
-  gl.uniform1f(timeUniformPosition, time)
-  gl.uniform2fv(resolutionUniformPosition, [512.0, 512.0]);
-  
-  let buffer = gl.createBuffer()
-  gl.enableVertexAttribArray(vertexPosAttribLocation)
-  gl.enableVertexAttribArray(colorPosAttribLocation)
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-    -0.2, 0, 0,
-    0, 1, 0.0,
-    0.2, 0.0, 0.0]), gl.STATIC_DRAW) // TODO array
-
-    gl.vertexAttribPointer(
-      vertexPosAttribLocation,          // location
-      3, // size (elements per vertex)
-      gl.FLOAT,                         // type
-      false,                            // normalize
-      0,                                // stride, number of elements per vertex
-      0                                 // offset
-    )
-
-    let colorBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-    1.0, 0.0, 0.0, 1.0,
-    0.0, 1.0, 0.0, 1.0,
-    0.0, 0.0, 1.0, 1.0]), gl.STATIC_DRAW) // TODO array
-
-  gl.vertexAttribPointer(
-    colorPosAttribLocation,          // location
-    4, // size (elements per vertex)
-    gl.FLOAT,                         // type
-    false,                            // normalize
-    0,                                // stride, number of elements per vertex
-    0                                // offset
-)
-
-  gl.clearColor(0.2, 0.4, 0.1, 1)
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-
-  gl.drawArrays(gl.TRIANGLES, 0, 3)
-
-  gl.disableVertexAttribArray(vertexPosAttribLocation)
-  gl.disableVertexAttribArray(colorPosAttribLocation)
   */
 }
 
