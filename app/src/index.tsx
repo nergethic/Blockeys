@@ -9,6 +9,8 @@ import {Config} from './config';
 import {AppState} from './appState';
 import {Geometry} from './renderer/geometry';
 import * as glm from 'gl-matrix';
+
+import {Blocks} from './blocks'
 //import * as index from './index';
 //index.default.x
 
@@ -82,6 +84,8 @@ function MakeVec3(x: number, y: number, z: number) {
 
 function tick() {
   requestAnimationFrame(tick)
+
+  Blocks.BlockTest();
 
   dt = clock.getDt()
   time += dt;
