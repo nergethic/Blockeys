@@ -4,5 +4,6 @@ export namespace Config {
     export let RenderCanvasID: string = 'glCanvas';
     export let BlocksCanvasID: string = 'blocksCanvas';
     export let MainContaierID: string = 'root';
+    export let CanvasContainerID: string = 'webgl-canvas-container'
     export let DebugMode: boolean = false;
 }

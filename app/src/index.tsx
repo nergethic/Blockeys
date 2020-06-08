@@ -14,18 +14,26 @@ import {Blocks} from './blocks'
 //import * as index from './index';
 //index.default.x
 
-ReactDOM.render (
-<App color="Blue" />,
-  document.getElementById("root")
-)
-
 let gl: WebGL2RenderingContext;
 let modelMatrix: glm.mat4;
 let geometry: Geometry.BufferGeometry;
 let material: Geometry.Material;
 let mesh: Geometry.Mesh;
 
+let meshBlock: Blocks.GenerateCubeMeshBlock;
+let meshRenderingBlock: Blocks.MeshRenderingBlock;
+
+let updateC: (r: number, g: number, b: number) => void;
+export function UpdateColor(r: number, g: number, b: number) {
+  updateC(r, g, b);
+}
+
 window.onload = () => {
+  ReactDOM.render (
+    <App color="Blue" />,
+      document.getElementById("root")
+    )
+
   generateHTML()
   gl = initWebGL()
   Geometry.InitializeModule(gl)
@@ -45,6 +53,8 @@ window.onload = () => {
   resolution[0] = Config.CanvasWidth;
   resolution[1] = Config.CanvasHeight;
   AppState.resolution = resolution;
+
+  AppState.lightPosition = MakeVec3(0, 0.6, 2.5);
 
   AppState.lightPositionUniform = new Geometry.Uniform<glm.vec3>("iLightPosition", Geometry.UniformType.Vector3, MakeVec3(0.0, 0.0, 0.0));
   AppState.cameraPositionUniform = new Geometry.Uniform<glm.vec3>("iViewPosition", Geometry.UniformType.Vector3, AppState.cameraPosition);
@@ -187,6 +197,32 @@ window.onload = () => {
 
     mesh = new Geometry.Mesh( geometry, material );
 
+    meshBlock = new Blocks.GenerateCubeMeshBlock();
+    meshRenderingBlock = new Blocks.MeshRenderingBlock();
+    meshBlock.ConnectSocket(meshBlock.outputs.sockets[0], meshRenderingBlock.inputs.sockets[0]);
+
+    updateC = (r, g, b) => {
+      if (r < 0) {
+        r = 0;
+      }
+      if (r > 255) {
+        r = 255;
+      }
+      if (g < 0) {
+        g = 0;
+      }
+      if (g > 255) {
+        g = 255;
+      }
+      if (b < 0) {
+        b = 0;
+      }
+      if (b > 255) {
+        b = 255;
+      }
+      meshBlock.tint = new Float32Array([r/255.0, g/255.0, b/255.0]);
+    };
+
   tick()
 }
 
@@ -247,12 +283,22 @@ function tick() {
   dt = clock.getDt();
   AppState.time += dt;
 
+  gl.clearColor(0.1, 0.3, 0.5, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  meshBlock.modelMatrix = glm.mat4.rotateY(meshBlock.modelMatrix, meshBlock.modelMatrix, dt*1.0)
+
+  meshBlock.SetInputData(0, true);
+  meshBlock.Update();
+
   // Blocks.BlockTest();
 
   //let scaled = glm.mat4.scale(modelMatrix, modelMatrix, MakeVec3(0.5, 0.5, 0.5))
 
   //let rotated = glm.mat4.rotateY(scaled, scaled, AppState.time)
   //let translated = glm.mat4.translate(scaled, scaled, MakeVec3(Math.cos(AppState.time), 0, 0))
+
+  /*
   material.SetUniform("iModel", modelMatrix);
   material.SetUniform("iTintColor", new Float32Array([0.2, 0.5, 0.0]));
 
@@ -268,6 +314,7 @@ function tick() {
 
   mesh.BindAttributes();
   mesh.DrawIndexed();
+  */
 
   /*
   let material2 = new Geometry.Material("vertex-normal", "fragment-normal", new Geometry.BufferUniform([
@@ -333,47 +380,14 @@ function initWebGL(): WebGL2RenderingContext {
 }
 
 function generateHTML() {
-  // webGL render canvas
   let renderCanvasElem: HTMLCanvasElement = document.createElement<"canvas">("canvas")
   renderCanvasElem.id     = Config.RenderCanvasID
   renderCanvasElem.width  = Config.CanvasWidth
   renderCanvasElem.height = Config.CanvasHeight
-  renderCanvasElem.style.border = "1px solid #007FFF"
   renderCanvasElem.innerHTML = "Your browser doesn't appear to support the TODO add error alert" +
                       "<code>&lt;canvas&gt;</code> element."
 
-  document.getElementById(Config.MainContaierID).appendChild(renderCanvasElem)
-
-  // blocks canvas
-  let blocksCanvasElem: HTMLCanvasElement = document.createElement<"canvas">("canvas")
-  blocksCanvasElem.id     = Config.BlocksCanvasID
-  blocksCanvasElem.width  = Config.CanvasWidth
-  blocksCanvasElem.height = Config.CanvasHeight
-  blocksCanvasElem.style.border = "1px solid #007FFF"
-  blocksCanvasElem.innerHTML = "Your browser doesn't appear to support the TODO add error alert" +
-                      "<code>&lt;canvas&gt;</code> element."
-
-  document.getElementById(Config.MainContaierID).appendChild(blocksCanvasElem)
-
-  let ctx = blocksCanvasElem.getContext("2d");
-  ctx.strokeStyle = "#333355";
-  let grid = 30;
-  
-  for (let y = 0; y < grid; y++) {
-    for (let x = 0; x < grid; x++) {
-      let yOffset = y*Config.CanvasHeight / grid;
-      ctx.beginPath();
-      ctx.moveTo(0, yOffset);
-      ctx.lineTo(Config.CanvasWidth, yOffset);
-      ctx.stroke();
-
-      let xOffset = y*Config.CanvasWidth / grid;
-      ctx.beginPath();
-      ctx.moveTo(xOffset, 0);
-      ctx.lineTo(xOffset, Config.CanvasHeight);
-      ctx.stroke();
-    }
-  }
+  document.getElementById(Config.CanvasContainerID).appendChild(renderCanvasElem)
 }
 
 /*

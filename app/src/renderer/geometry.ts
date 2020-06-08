@@ -347,6 +347,14 @@ export namespace Geometry {
         attribLocations: number[];
 
         constructor(geometry: BufferGeometry, material: Material) {
+            if (geometry == null) {
+                console.log("ERROR: geometry is null!");
+            }
+
+            if (material == null) {
+                console.log("ERROR: material is null!");
+            }
+
             this.geometry = geometry;
             this.material = material;
             this.attribLocations = new Array(geometry.attributes.length);

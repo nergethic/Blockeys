@@ -1,14 +1,13 @@
 import * as React from 'react';
-import * as test from './Block';
 
-import PageInterface from '../file';
+import PageInterface from '../PageData';
+import * as BlockGrid from './BlockGrid';
 
 class App extends React.Component<PageInterface, {}> {
+  //<p>props test: {this.props.color}</p>
   render() {
     return (<div>
-      <test.DragDrop></test.DragDrop>
-      <h1>Welcome to React with Typescript</h1>
-      <p>The color of this page is: {this.props.color}</p>
+      <BlockGrid.Container />
     </div>
     );
   }

@@ -10,6 +10,7 @@
 [] PBR?
 
 - visual blocks
+  [X] inspector GUI
   [] material
   [] geometry
   [] mesh
@@ -20,5 +21,5 @@
 
 - editor
     [] adding nodes
-    [] changing parameters
+    [X,] changing parameters
     [] connectiong nodes

@@ -4,7 +4,16 @@ import { AppState } from './appState';
 import * as glm from 'gl-matrix';
 
 export namespace Blocks {
-    type SocketType = Socket<number | string | boolean>;
+    type SocketType = Socket<number | string | boolean | Geometry.Mesh>;
+
+    export enum BlockType {
+        Basic,
+        MathAddition,
+        MathSubstraction,
+        GenerateMesh,
+        MeshRendering,
+        DisplayInput
+    } 
 
     class Socket<SocketType> {
         name: string;
@@ -44,10 +53,12 @@ export namespace Blocks {
     }
 
     export class BasicBlock {
+        blockType: BlockType;
         inputs: SocketGroup;
         outputs: SocketGroup;
 
-        constructor(inputs: SocketGroup, outputs: SocketGroup) {
+        constructor(type: BlockType, inputs: SocketGroup, outputs: SocketGroup) {
+            this.blockType = type;
             this.inputs = inputs;
             this.outputs = outputs;
 
@@ -156,7 +167,7 @@ export namespace Blocks {
             let outputs = new SocketGroup([
                 new Socket<string>("result", "d")
             ]);
-            super(inputs, outputs);
+            super(BlockType.MathAddition, inputs, outputs);
         }
 
         Update() {
@@ -167,7 +178,23 @@ export namespace Blocks {
         }
     }
 
-    export class GenerateMeshBlock extends BasicBlock {
+    export class DisplayInputBlock extends BasicBlock {
+        constructor() {
+            let inputs  = new SocketGroup([
+                new Socket<number>("inputToDisplay", 0.0),
+            ]);
+            super(BlockType.DisplayInput, inputs, new SocketGroup());
+        }
+
+        Update() {
+            let result = this.GetInputData<number>(0);
+            console.log(result)
+
+            super.Update();
+        }
+    }
+
+    export class GenerateCubeMeshBlock extends BasicBlock {
         mesh: Geometry.Mesh;
         vertices: Float32Array;
         indices: Uint16Array;
@@ -183,7 +210,7 @@ export namespace Blocks {
             let outputs = new SocketGroup([
                 new Socket<Geometry.Mesh>("result", null)
             ]);
-            super(inputs, outputs);
+            super(BlockType.GenerateMesh, inputs, outputs);
 
             this.vertices = new Float32Array([
                 // Front face
@@ -314,26 +341,41 @@ export namespace Blocks {
                 let tintColorUniform = new Geometry.Uniform<Float32Array>("iTintColor", Geometry.UniformType.Vector3, this.tint);
 
                 let material = new Geometry.Material("vertex-normal", "fragment-normal", new Geometry.BufferUniform([
-                    modelUniform, tintColorUniform, AppState.viewUniform, AppState.projectionUniform,
-                    AppState.timeUniform, AppState.resolutionUniform,
-                    AppState.lightPositionUniform, AppState.cameraPositionUniform]));
+                    modelUniform, tintColorUniform,
+                    AppState.cameraPositionUniform, AppState.viewUniform, AppState.projectionUniform, AppState.lightPositionUniform,
+                    AppState.timeUniform, AppState.resolutionUniform,]));
 
                 this.mesh = new Geometry.Mesh(geometry, material);
+
+                this.SetOutputData(0, this.mesh);
         }
 
         Update() {
-            let trigger = this.GetInputData<boolean>(0);
-            if (trigger) {
-                this.SetInputData<boolean>(0, false);
+            //let trigger = this.GetInputData<boolean>(0);
+            //if (trigger) {
+                //this.SetInputData<boolean>(0, false);
 
                 // this.geometry = new Geometry.BufferGeometry();
-            }
+            //}
+
+            this.mesh.material.SetUniform("iModel", this.modelMatrix)
+            this.mesh.material.SetUniform("iTintColor", this.tint)
+
+            this.mesh.material.SetUniform("iLightPosition", AppState.lightPosition)
+            this.mesh.material.SetUniform("iViewPosition", AppState.cameraPosition)
+            this.mesh.material.SetUniform("iView", AppState.viewMatrix)
+            this.mesh.material.SetUniform("iProjection", AppState.projectionMatrix)
+            this.mesh.material.SetUniform("iTime", AppState.time)
+            this.mesh.material.SetUniform("iResolution", AppState.resolution)
+
+            this.mesh.BindAttributes();
+            this.mesh.DrawIndexed();
 
             super.Update();
         }
     }
 
-    export class RenderingBlock extends BasicBlock {
+    export class MeshRenderingBlock extends BasicBlock {
         constructor() {
             let inputs  = new SocketGroup([
                 new Socket<Geometry.Mesh>("mesh1", null),
@@ -341,17 +383,23 @@ export namespace Blocks {
                 new Socket<Geometry.Mesh>("mesh3", null)
             ]);
             let outputs = new SocketGroup();
-            super(inputs, outputs);
+            super(BlockType.MeshRendering, inputs, outputs);
         }
 
         Update() {
+            /*
             for (let i = 0; i < this.inputs.sockets.length; i++) {
                 const socket = this.inputs.sockets[i];
                 if (socket.IsConnected()) {
-                    const block = socket.connectedSocket.myBlock as GenerateMeshBlock;
+                    const block = socket.connectedSocket.myBlock as GenerateCubeMeshBlock;
                     const mesh = this.GetInputData<Geometry.Mesh>(i);
+                    //console.log(block);
+                    //if (block == null || mesh == null) {
+                        //continue;
+                    //}
                     mesh.material.SetUniform("iModel", block.modelMatrix)
                     mesh.material.SetUniform("iTintColor", block.tint)
+                    // console.log(block.tint)
 
                     mesh.material.SetUniform("iLightPosition", AppState.lightPosition)
                     mesh.material.SetUniform("iViewPosition", AppState.cameraPosition)
@@ -366,6 +414,7 @@ export namespace Blocks {
             }
 
             super.Update();
+            */
         }
     }
 
@@ -373,7 +422,7 @@ export namespace Blocks {
         let block1 = new MathAdditionBlock();
 
         let block2Inputs = new SocketGroup([new Socket<number>("display", 0.0)])
-        let block2 = new BasicBlock(block2Inputs, null);
+        let block2 = new BasicBlock(BlockType.Basic, block2Inputs, null);
 
         block1.ConnectSocket<number>(block1.outputs.sockets[0], block2.inputs.sockets[0]);
 
