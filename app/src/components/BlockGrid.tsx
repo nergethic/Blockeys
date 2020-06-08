@@ -510,14 +510,37 @@ class SVG extends React.Component {
                 table.push(elem);
             }
 
-            // generate outputs
+            // generate outputs TODO this is ugly and ineficcient
             for (let i = 0; i < block.block.outputs.sockets.length; i++) {
-                let elem = <RectSocket 
+                table.push(<RectSocket 
                     x={ pos.x + 205 } // TODO: 300 to block length
                     y={ pos.y + 20*i }
-                />;
+                />);
 
-                table.push(elem);
+                // find and draw connections
+                for (let i = 0; i < block.block.outputs.sockets.length; i++) {
+                    const mySocket = block.block.outputs.sockets[i];
+                    if (mySocket.IsConnected()) {
+                        blocks.forEach((b: GridBlockContainer) => {
+                            // TODO? if (b == block) continue;
+                            for (let socketIndex = 0; socketIndex < b.block.inputs.sockets.length; socketIndex++) { // TODO: cache this
+                                const socket = b.block.inputs.sockets[socketIndex];
+                                if (socket.IsConnected()) {
+                                    if (socket.connectedSocket == mySocket) {
+                                        table.push(<g className="ad-Anchor">
+                                            <line
+                                                className="ad-Anchor-line"
+                                                x1={ pos.x + 205 }
+                                                y1={ pos.y + 20*i }
+                                                x2={ b.gridPosition.x}
+                                                y2={ b.gridPosition.y} />
+                                                </g>);
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }                
             }
 
             return (
