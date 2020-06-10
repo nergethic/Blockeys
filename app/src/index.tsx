@@ -31,8 +31,40 @@ export function UpdateColor(r: number, g: number, b: number) {
 }
 
 let blocksToUpdate: Blocks.BasicBlock[];
-export function SetBlockToUpdate(block: Blocks.BasicBlock) {
-  blocksToUpdate.push(block);
+
+export function CreateBlock(type: Blocks.BlockType, updateInTick: boolean): Blocks.BasicBlock {
+  let newBlock: Blocks.BasicBlock;
+  switch (type) {
+    case Blocks.BlockType.DisplayInput: {
+        newBlock = new Blocks.DisplayInputBlock()
+    } break;
+
+    case Blocks.BlockType.GenerateMesh: {
+      newBlock = new Blocks.GenerateCubeMeshBlock()
+    } break;
+
+    case Blocks.BlockType.MathAddition: {
+      newBlock = new Blocks.MathAdditionBlock()
+    } break;
+
+    case Blocks.BlockType.MathSin: {
+      newBlock = new Blocks.MathSinBlock()
+    } break;
+
+    case Blocks.BlockType.MathSubstraction: {
+      //newBlock = new Blocks.math()
+    } break;
+
+    case Blocks.BlockType.Time: {
+      newBlock = new Blocks.TimeBlock()
+    } break;
+  }
+  
+  if (updateInTick) {
+    blocksToUpdate.push(newBlock)
+  }
+
+  return newBlock;
 }
 
 window.onload = () => {

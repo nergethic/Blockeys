@@ -76,8 +76,8 @@ export class Container extends React.Component {
         document.addEventListener("keydown", this.handleKeyDown, false)
         document.addEventListener("keyup", this.handleKeyUp, false)
 
-        let additionBlock = new Blocks.MathAdditionBlock();
-        let displayInputBlock = new Blocks.DisplayInputBlock();
+        let additionBlock = Main.CreateBlock(Blocks.BlockType.MathAddition, false);
+        let displayInputBlock = Main.CreateBlock(Blocks.BlockType.DisplayInput, false);
 
         additionBlock.ConnectSocket(additionBlock.outputs.sockets[0], displayInputBlock.inputs.sockets[0]);
         additionBlock.SetInputData(0, 1.0);
@@ -88,8 +88,8 @@ export class Container extends React.Component {
         let additionBlockGridContainer = new GridBlockContainer(additionBlock, Utility.MakeVec2(100, 300));
         let displayInputBlockGridContainer = new GridBlockContainer(displayInputBlock, Utility.MakeVec2(500, 300));
 
-        let timeBlock = new Blocks.TimeBlock();
-        let sinBlock = new Blocks.MathSinBlock();
+        let timeBlock = Main.CreateBlock(Blocks.BlockType.Time, true);
+        let sinBlock = Main.CreateBlock(Blocks.BlockType.MathSin, false);
         timeBlock.ConnectSocket(timeBlock.outputs.sockets[0], sinBlock.inputs.sockets[0]);
 
         let timeBlockGridContainer = new GridBlockContainer(timeBlock, Utility.MakeVec2(100, 700));
@@ -100,18 +100,6 @@ export class Container extends React.Component {
 
         this.gridBlocks.push(timeBlockGridContainer);
         this.gridBlocks.push(sinBlockGridContainer);
-
-        Main.SetBlockToUpdate(timeBlock);
-
-        //[
-            //{ block: this.gridBlocks[0], x: 100, y: 300 },
-            //{ block: this.blogridBlockscks[1], x: 400, y: 300, q: { x: 150, y: 50 } },
-            //{ block: this.gridBlocks[2], x: 650, y: 300, q: { x: 250, y: 550 } }
-            //{ x: 400, y: 300, q: { x: 350, y: 50 } },
-            //{ x: 500, y: 300, c: [{ x: 450, y: 550 }, { x: 450, y: 50 }] },
-            //{ x: 600, y: 300, c: [{ x: 550, y: 50 }, { x: 550, y: 550 }] },
-            //{ x: 700, y: 300, a: { rx: 50, ry: 50, rot: 0, laf: 1, sf: 1 } }
-        //],
     }
     
     UNSAFE_componentWillUnmount() {
@@ -191,43 +179,6 @@ export class Container extends React.Component {
         const blocks = this.state.blocks;
         const activeBlockIndex = this.state.activeBlockIndex;
         const activeBlock: GridBlockContainer = blocks[activeBlockIndex];
-        
-        /*
-        let value = e.target.value;
-    
-        switch (v) {
-            case "l":
-                activeBlock = {
-                    x: activeBlock.gridPosition.x,
-                    y: activeBlock.gridPosition.y
-                }
-            break
-            case "q":
-                activeBlock = {
-                    x: activeBlock.gridPosition.x,
-                    y: activeBlock.activeBlock.y,
-                    q: {
-                        x: (activeBlock.x + blocks[activeBlockIndex - 1].x) / 2,
-                        y: (activeBlock.y + blocks[activeBlockIndex - 1].y) / 2
-                    }
-                }
-            break
-            case "c":
-                activeBlock = {
-                    x: activeBlock.x,
-                    y: activeBlock.y
-                }
-            break
-            case "a":
-                activeBlock = {
-                    x: activeBlock.x,
-                    y: activeBlock.y
-                }
-            break
-        }
-
-        this.setState({ blocks })
-        */
     };
     
     setPointXPosition = (e: React.FormEvent<HTMLSelectElement>) => {
@@ -260,60 +211,12 @@ export class Container extends React.Component {
 
         this.setState({ blocks })
     };
-
-    
-    setArcParam = (param: any, e: any) => {
-        const blocks = this.state.blocks
-        const activeBlockIndex = this.state.activeBlockIndex
-        let v;
-        
-        if (["laf", "sf"].indexOf(param) > -1) {
-            v = e.target.checked ? 1 : 0
-        } else {
-            v = this.positiveNumber(e.target.value)
-        }
-        
-        // @ts-ignore
-        //blocks[active].a[param] = v
-        
-        this.setState({ blocks })
-    };
-    
-    setCubicCoords = (coords: any, anchor: any) => {
-        const blocks = this.state.blocks
-        const active = this.state.activeBlockIndex
-        
-        /*
-        blocks[active].c[anchor].x = coords.x
-        blocks[active].c[anchor].y = coords.y
-        */
-        
-        this.setState({ blocks })
-    };
     
     setDraggedPoint = (index: number) => {
         if ( ! this.state.ctrl) {
             this.setState({
                 activeBlockIndex: index,
                 draggedPoint: true
-            })
-        }
-    };
-
-    setDraggedQuadratic = (index: number) => {
-        if ( ! this.state.ctrl) {
-            this.setState({
-                activeBlockIndex: index,
-                draggedQuadratic: true
-            })
-        }
-    };
-
-    setDraggedCubic = (index: number, anchor: any) => {
-        if ( ! this.state.ctrl) {
-            this.setState({
-                activeBlockIndex: index,
-                draggedCubic: anchor
             })
         }
     };
@@ -364,8 +267,6 @@ export class Container extends React.Component {
         if ( ! this.state.ctrl) {
             if (this.state.draggedPoint) {
                 this.setPointCoords(this.getMouseCoords(e))
-            } else if (this.state.draggedCubic !== false) {
-                this.setCubicCoords(this.getMouseCoords(e), this.state.draggedCubic)
             }
         }
     };
@@ -432,8 +333,6 @@ export class Container extends React.Component {
                             // @ts-ignore
                             addBlockToGrid={ this.addBlockToGrid }
                             setDraggedPoint={ this.setDraggedPoint }
-                            setDraggedQuadratic={ this.setDraggedQuadratic }
-                            setDraggedCubic={ this.setDraggedCubic }
                             handleMouseMove={ this.handleMouseMove }
                             />
                     </div>
@@ -448,7 +347,6 @@ export class Container extends React.Component {
                         removeActiveBlock={ this.removeActiveBlock }
                         setPointXPosition={ this.setPointXPosition }
                         setPointYPosition={ this.setPointYPosition }
-                        setArcParam={ this.setArcParam }
                         setBlockType={ this.setBlockType }
                         //setWidth={ this.setWidth }
                         //setHeight={ this.setHeight }
