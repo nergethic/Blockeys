@@ -4,7 +4,7 @@ import '../styles/main.scss';
 import { Config } from '../config';
 import * as Main from '../index'
 import { Blocks } from '../blocks';
-import { vec2 } from 'gl-matrix';
+import { vec2, vec3, mat4 } from 'gl-matrix';
 import * as Utility from '../utility'
 
 let panelWidth = Config.CanvasWidth + 2;
@@ -47,6 +47,12 @@ type ContainerState = {
     color: ColorRGB
   }
 
+
+  let genBlocks: () => void;
+export function GenerateSomeBlocks() {
+    genBlocks();
+}
+
 export class Container extends React.Component {
     gridBlocks: GridBlockContainer[] = new Array();
 
@@ -77,29 +83,38 @@ export class Container extends React.Component {
         document.addEventListener("keyup", this.handleKeyUp, false)
 
         let additionBlock = Main.CreateBlock(Blocks.BlockType.MathAddition, false);
-        let displayInputBlock = Main.CreateBlock(Blocks.BlockType.DisplayInput, false);
+            let displayInputBlock = Main.CreateBlock(Blocks.BlockType.DisplayInput, false);
+    
+            additionBlock.ConnectSocket(additionBlock.outputs.sockets[0], displayInputBlock.inputs.sockets[0]);
+            additionBlock.SetInputData(0, 1.0);
+            additionBlock.SetInputData(1, 5.0);
+    
+            additionBlock.Update();
+    
+            let additionBlockGridContainer = new GridBlockContainer(additionBlock, Utility.MakeVec2(100, 300));
+            let displayInputBlockGridContainer = new GridBlockContainer(displayInputBlock, Utility.MakeVec2(500, 300));
+            this.gridBlocks.push(additionBlockGridContainer);
+            this.gridBlocks.push(displayInputBlockGridContainer);
 
-        additionBlock.ConnectSocket(additionBlock.outputs.sockets[0], displayInputBlock.inputs.sockets[0]);
-        additionBlock.SetInputData(0, 1.0);
-        additionBlock.SetInputData(1, 5.0);
-
-        additionBlock.Update();
-
-        let additionBlockGridContainer = new GridBlockContainer(additionBlock, Utility.MakeVec2(100, 300));
-        let displayInputBlockGridContainer = new GridBlockContainer(displayInputBlock, Utility.MakeVec2(500, 300));
-
-        let timeBlock = Main.CreateBlock(Blocks.BlockType.Time, true);
-        let sinBlock = Main.CreateBlock(Blocks.BlockType.MathSin, false);
-        timeBlock.ConnectSocket(timeBlock.outputs.sockets[0], sinBlock.inputs.sockets[0]);
-
-        let timeBlockGridContainer = new GridBlockContainer(timeBlock, Utility.MakeVec2(100, 700));
-        let sinBlockGridContainer = new GridBlockContainer(sinBlock, Utility.MakeVec2(500, 700));
-
-        this.gridBlocks.push(additionBlockGridContainer);
-        this.gridBlocks.push(displayInputBlockGridContainer);
-
-        this.gridBlocks.push(timeBlockGridContainer);
-        this.gridBlocks.push(sinBlockGridContainer);
+        genBlocks = () => {
+            let timeBlock = Main.CreateBlock(Blocks.BlockType.Time, true);
+            let sinBlock = Main.CreateBlock(Blocks.BlockType.MathSin, false);
+            let sinBlock2 = Main.CreateBlock(Blocks.BlockType.MathSin, false);
+            timeBlock.ConnectSocket(timeBlock.outputs.sockets[0], sinBlock.inputs.sockets[0]);
+            sinBlock.ConnectSocket(sinBlock.outputs.sockets[0], sinBlock2.inputs.sockets[0]);
+    
+            let timeBlockGridContainer = new GridBlockContainer(timeBlock, Utility.MakeVec2(100, 700));
+            let sinBlockGridContainer = new GridBlockContainer(sinBlock, Utility.MakeVec2(500, 700));
+            let sinBlock2GridContainer = new GridBlockContainer(sinBlock2, Utility.MakeVec2(700, 800));
+            this.gridBlocks.push(sinBlock2GridContainer);
+    
+            this.gridBlocks.push(timeBlockGridContainer);
+            this.gridBlocks.push(sinBlockGridContainer);
+    
+            let meshBlock = Main.CreateBlock(Blocks.BlockType.GenerateMesh, true);
+            let meshBlockBlockGridContainer = new GridBlockContainer(meshBlock, Utility.MakeVec2(0, 900));
+            this.gridBlocks.push(meshBlockBlockGridContainer);
+        }
     }
     
     UNSAFE_componentWillUnmount() {
@@ -203,6 +218,11 @@ export class Container extends React.Component {
 
         this.setPointCoords(activeBlockCoords)
     };
+
+    updateBlocks() {
+        const blocks = this.state.blocks;
+        this.setState({ blocks })
+    }
     
     setPointCoords = (coords: vec2) => {
         const blocks = this.state.blocks
@@ -347,6 +367,7 @@ export class Container extends React.Component {
                         removeActiveBlock={ this.removeActiveBlock }
                         setPointXPosition={ this.setPointXPosition }
                         setPointYPosition={ this.setPointYPosition }
+                        updateBlocks={this.updateBlocks}
                         setBlockType={ this.setBlockType }
                         //setWidth={ this.setWidth }
                         //setHeight={ this.setHeight }
@@ -686,13 +707,48 @@ function WebGLCanvas(props: any) {
     )
 }
 
+type VolatileTextProps = {
+    name: string,
+    block: GridBlockContainer,
+    dataToDisplay: () => number
+}
+
+const InitialVolatileTextState = {
+    val: "0"
+}
+
+type VolatileTextState = typeof InitialVolatileTextState
+
+class VolatileText extends React.Component<VolatileTextProps, VolatileTextState> {
+    public readonly state = InitialVolatileTextState; 
+    constructor(props: VolatileTextProps) {
+        super(props);
+
+        setInterval(() => {
+            this.setState({ val: props.dataToDisplay().toFixed(1)} as VolatileTextState)
+        }, 20)
+      }
+
+    render() {
+        return (
+            <div className="ad-Control">
+        <label className="ad-Control-label">
+        { this.props.name }
+        </label>
+        <h1 className="ad-Text">{this.state.val}</h1>
+        </div>
+            
+        );
+    }
+}
+
 function InspectorControls(props: any) {
     if (props.activeBlockIndex < 0 || props.activeBlockIndex >= props.blocks.length) {
         console.log("ERROR: invalid activeBlockIndex: " + props.activeBlockIndex);
         return;
     }
 
-    const activeBlock: GridBlockContainer = props.blocks[props.activeBlockIndex] // TODO block type
+    const activeBlock: GridBlockContainer = props.blocks[props.activeBlockIndex]
     const step = props.grid.snap ? props.grid.size : 1
 
     let styles = {
@@ -754,30 +810,174 @@ function InspectorControls(props: any) {
 
         case Blocks.BlockType.Time: {
             params.push(
-                <Control
-                    name="OUTPUT"
-                    type="text"
-                    value={ activeBlock.block.outputs.sockets[0].data }
-                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {} } />
+                <VolatileText
+                    name="TIME OUT"
+                    block={activeBlock}
+                    dataToDisplay={(): number => activeBlock.block.GetOutputData(0)}/>
             );
         } break;
 
         case Blocks.BlockType.MathSin: {
             params.push(
-                <div className="ad-Controls-container">
-                <Control
-                    name="INPUT"
-                    type="text"
-                    value={ activeBlock.block.GetInputData(0) }
-                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {} } />
-                <Control
-                    name="OUTPUT"
-                    type="text"
-                    value={ activeBlock.block.GetOutputData(0) }
-                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {} } />
+                <div>
+                <VolatileText
+                    name="IN"
+                    block={activeBlock}
+                    dataToDisplay={(): number => activeBlock.block.GetInputData(0)} />
+
+                <VolatileText
+                    name="OUT"
+                    block={activeBlock}
+                    dataToDisplay={(): number => activeBlock.block.GetOutputData(0)} />
                 </div>
             );
         } break;
+
+        case Blocks.BlockType.GenerateMesh: {
+            let activeBlockCasted = activeBlock.block as Blocks.GenerateCubeMeshBlock;
+            params.push(
+                <div className="ad-Controls-container">
+                <Control
+                    name="Red"
+                    type="text"
+                    value={ props.color.red }
+                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
+                        props.color.red = e.currentTarget.value
+                        let r = props.color.red;
+                        let g = props.color.green;
+                        let b = props.color.blue;
+                        if (r < 0) {
+                            r = 0;
+                          }
+                          if (r > 255) {
+                            r = 255;
+                          }
+                          if (g < 0) {
+                            g = 0;
+                          }
+                          if (g > 255) {
+                            g = 255;
+                          }
+                          if (b < 0) {
+                            b = 0;
+                          }
+                          if (b > 255) {
+                            b = 255;
+                          }
+                          props.color.red = r;
+                          activeBlockCasted.tint = new Float32Array([r/255.0, g/255.0, b/255.0]);
+                    } } />
+                <Control
+                    name="Green"
+                    type="text"
+                    value={ props.color.green }
+                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
+                        props.color.green = e.currentTarget.value
+                        let r = props.color.red;
+                        let g = props.color.green;
+                        let b = props.color.blue;
+                        if (r < 0) {
+                            r = 0;
+                          }
+                          if (r > 255) {
+                            r = 255;
+                          }
+                          if (g < 0) {
+                            g = 0;
+                          }
+                          if (g > 255) {
+                            g = 255;
+                          }
+                          if (b < 0) {
+                            b = 0;
+                          }
+                          if (b > 255) {
+                            b = 255;
+                          }
+                          props.color.green = g;
+                          activeBlockCasted.tint = new Float32Array([r/255.0, g/255.0, b/255.0]);
+                    } } />
+                <Control
+                    name="Blue"
+                    type="text"
+                    value={ props.color.blue }
+                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
+                        props.color.blue = e.currentTarget.value
+                        let r = props.color.red;
+                        let g = props.color.green;
+                        let b = props.color.blue;
+                        if (r < 0) {
+                            r = 0;
+                          }
+                          if (r > 255) {
+                            r = 255;
+                          }
+                          if (g < 0) {
+                            g = 0;
+                          }
+                          if (g > 255) {
+                            g = 255;
+                          }
+                          if (b < 0) {
+                            b = 0;
+                          }
+                          if (b > 255) {
+                            b = 255;
+                          }
+                          props.color.blue = b;
+                          activeBlockCasted.tint = new Float32Array([r/255.0, g/255.0, b/255.0]);
+                    } } />
+
+                <div className="ad-Controls-container">
+                <Control
+                    name="X"
+                    type="range"
+                    min={ -4 }
+                    max={ 4 }
+                    step={ 0.1 }
+                    value={ mat4.getTranslation(Utility.MakeVec3(0,0,0), activeBlockCasted.modelMatrix)[0] }
+                    onChange={ (e: React.FormEvent<HTMLInputElement>) => {
+                        let currentTranslation = Utility.MakeVec3(0,0,0);
+                        currentTranslation = mat4.getTranslation(currentTranslation, activeBlockCasted.modelMatrix)
+                        let newMatrix = mat4.create();
+                        newMatrix = mat4.translate(newMatrix, newMatrix, Utility.MakeVec3(parseFloat(e.currentTarget.value), currentTranslation[1], currentTranslation[2]));
+                        activeBlockCasted.modelMatrix = newMatrix;
+                        props.updateBlocks();
+                    } } />
+                    <Control
+                    name="Y"
+                    type="range"
+                    min={ -4 }
+                    max={ 4 }
+                    step={ 0.1 }
+                    value={ mat4.getTranslation(Utility.MakeVec3(0,0,0), activeBlockCasted.modelMatrix)[1] }
+                    onChange={ (e: React.FormEvent<HTMLInputElement>) => {
+                        let currentTranslation = Utility.MakeVec3(0,0,0);
+                        currentTranslation = mat4.getTranslation(currentTranslation, activeBlockCasted.modelMatrix)
+                        let newMatrix = mat4.create();
+                        newMatrix = mat4.translate(newMatrix, newMatrix, Utility.MakeVec3(currentTranslation[0], parseFloat(e.currentTarget.value), currentTranslation[2]));
+                        activeBlockCasted.modelMatrix = newMatrix;
+                        props.updateBlocks();
+                    } } />
+                    <Control
+                    name="Z"
+                    type="range"
+                    min={ -4 }
+                    max={ 4 }
+                    step={ 0.1 }
+                    value={ mat4.getTranslation(Utility.MakeVec3(0,0,0), activeBlockCasted.modelMatrix)[2] }
+                    onChange={ (e: React.FormEvent<HTMLInputElement>) => {
+                        let currentTranslation = Utility.MakeVec3(0,0,0);
+                        currentTranslation = mat4.getTranslation(currentTranslation, activeBlockCasted.modelMatrix)
+                        let newMatrix = mat4.create();
+                        newMatrix = mat4.translate(newMatrix, newMatrix, Utility.MakeVec3(currentTranslation[0], currentTranslation[1], parseFloat(e.currentTarget.value)));
+                        activeBlockCasted.modelMatrix = newMatrix;
+                        props.updateBlocks();
+                    } } />
+            </div>
+            </div>
+            );
+        }
     }
         
     return (
@@ -792,32 +992,6 @@ function InspectorControls(props: any) {
                 Common
             </h3>
             
-            <div className="ad-Controls-container">
-                <Control
-                    name="Red"
-                    type="text"
-                    value={ props.color.red }
-                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
-                        props.color.red = e.currentTarget.value
-                        Main.UpdateColor(props.color.red, props.color.green, props.color.blue);
-                    } } />
-                <Control
-                    name="Green"
-                    type="text"
-                    value={ props.color.green }
-                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
-                        props.color.green = e.currentTarget.value
-                        Main.UpdateColor(props.color.red, props.color.green, props.color.blue);
-                    } } />
-                <Control
-                    name="Blue"
-                    type="text"
-                    value={ props.color.blue }
-                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
-                        props.color.blue = e.currentTarget.value
-                        Main.UpdateColor(props.color.red, props.color.green, props.color.blue);
-                    } } />
-            </div>
             <div className="ad-Controls-container">
                 <Control
                     name="Grid size"

@@ -58,11 +58,14 @@ export namespace Blocks {
         blockType: BlockType;
         inputs: SocketGroup;
         outputs: SocketGroup;
+        afterUpdateAction: () => {};
+        hasAfterUpdateAction: boolean;
 
         constructor(type: BlockType, inputs: SocketGroup, outputs: SocketGroup) {
             this.blockType = type;
             this.inputs = inputs;
             this.outputs = outputs;
+            this.hasAfterUpdateAction = false;
 
             if (inputs == null) {
                 this.inputs = new SocketGroup();
@@ -74,6 +77,13 @@ export namespace Blocks {
 
             this.inputs.InitializeSockets(this);
             this.outputs.InitializeSockets(this);
+        }
+
+        Update(): void {
+            this.TriggerOutputsUpdate();
+            if (this.hasAfterUpdateAction) {
+                this.afterUpdateAction();
+            }
         }
 
         ConnectSocket<T>(mySocket: Socket<T>, otherSocket: Socket<T>): void {
@@ -90,8 +100,9 @@ export namespace Blocks {
             this.TriggerOutputsUpdate();
         }
 
-        Update(): void {
-            this.TriggerOutputsUpdate();
+        SetAfterUpdateAction(action: () => {}) {
+            this.hasAfterUpdateAction = true;
+            this.afterUpdateAction = action;
         }
 
         UpdateInputData(): void {

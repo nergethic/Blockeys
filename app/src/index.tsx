@@ -13,6 +13,7 @@ import * as glm from 'gl-matrix';
 import {Blocks} from './blocks'
 
 import * as Utility from './utility'
+import * as BlockGrid from './components/BlockGrid'
 //import * as index from './index';
 //index.default.x
 
@@ -68,42 +69,19 @@ export function CreateBlock(type: Blocks.BlockType, updateInTick: boolean): Bloc
 }
 
 window.onload = () => {
-  blocksToUpdate = new Array();
-
   ReactDOM.render (
     <App color="Blue" />,
       document.getElementById("root")
     )
 
+  blocksToUpdate = new Array();
+
   generateHTML()
   gl = initWebGL()
   Geometry.InitializeModule(gl)
+  InitAppState()
 
-  AppState.time = 0.0;
-
-  // ---------- create a camera matrix
-  AppState.viewMatrix = glm.mat4.create();
-  AppState.cameraPosition = Utility.MakeVec3(0, 0, 10);
-  glm.mat4.lookAt(AppState.viewMatrix, AppState.cameraPosition, Utility.MakeVec3(0, 0, 0), Utility.MakeVec3(0, 1, 0))
-
-  // ---------- create a projection matrix
-  AppState.projectionMatrix = glm.mat4.create();
-  glm.mat4.perspective(AppState.projectionMatrix, 0.5, Config.CanvasWidth / Config.CanvasHeight, 0.05, 1000)
-
-  let resolution = new Float32Array(2);
-  resolution[0] = Config.CanvasWidth;
-  resolution[1] = Config.CanvasHeight;
-  AppState.resolution = resolution;
-
-  AppState.lightPosition = Utility.MakeVec3(0, 0.6, 2.5);
-
-  AppState.lightPositionUniform = new Geometry.Uniform<glm.vec3>("iLightPosition", Geometry.UniformType.Vector3, Utility.MakeVec3(0.0, 0.0, 0.0));
-  AppState.cameraPositionUniform = new Geometry.Uniform<glm.vec3>("iViewPosition", Geometry.UniformType.Vector3, AppState.cameraPosition);
-  AppState.viewUniform = new Geometry.Uniform<glm.mat4>("iView", Geometry.UniformType.Matrix4, AppState.viewMatrix);
-  AppState.projectionUniform = new Geometry.Uniform<glm.mat4>("iProjection", Geometry.UniformType.Matrix4, AppState.projectionMatrix);
-
-  AppState.timeUniform = new Geometry.Uniform<number>("iTime", Geometry.UniformType.Float, AppState.time);
-  AppState.resolutionUniform = new Geometry.Uniform<Float32Array>("iResolution", Geometry.UniformType.Vector2, resolution);
+  BlockGrid.GenerateSomeBlocks();
 
   // mesh setup
   let vertices = new Float32Array([
@@ -216,7 +194,7 @@ window.onload = () => {
     0.0, 1.0, 0.0, 1.0,
     0.0, 0.0, 1.0, 1.0,
     1.0, 0.0, 0.0, 1.0]);
-
+/*
     geometry = new Geometry.BufferGeometry();
     geometry.SetVertices(vertices);
     geometry.SetIndices(indexData);
@@ -241,7 +219,7 @@ window.onload = () => {
     meshBlock = new Blocks.GenerateCubeMeshBlock();
     meshRenderingBlock = new Blocks.MeshRenderingBlock();
     meshBlock.ConnectSocket(meshBlock.outputs.sockets[0], meshRenderingBlock.inputs.sockets[0]);
-
+*/
     updateC = (r, g, b) => {
       if (r < 0) {
         r = 0;
@@ -265,6 +243,34 @@ window.onload = () => {
     };
 
   tick()
+}
+
+function InitAppState() {
+  AppState.time = 0.0;
+
+  // ---------- create a camera matrix
+  AppState.viewMatrix = glm.mat4.create();
+  AppState.cameraPosition = Utility.MakeVec3(0, 0, 10);
+  glm.mat4.lookAt(AppState.viewMatrix, AppState.cameraPosition, Utility.MakeVec3(0, 0, 0), Utility.MakeVec3(0, 1, 0))
+
+  // ---------- create a projection matrix
+  AppState.projectionMatrix = glm.mat4.create();
+  glm.mat4.perspective(AppState.projectionMatrix, 0.5, Config.CanvasWidth / Config.CanvasHeight, 0.05, 1000)
+
+  let resolution = new Float32Array(2);
+  resolution[0] = Config.CanvasWidth;
+  resolution[1] = Config.CanvasHeight;
+  AppState.resolution = resolution;
+
+  AppState.lightPosition = Utility.MakeVec3(0, 0.6, 2.5);
+
+  AppState.lightPositionUniform = new Geometry.Uniform<glm.vec3>("iLightPosition", Geometry.UniformType.Vector3, Utility.MakeVec3(0.0, 0.0, 0.0));
+  AppState.cameraPositionUniform = new Geometry.Uniform<glm.vec3>("iViewPosition", Geometry.UniformType.Vector3, AppState.cameraPosition);
+  AppState.viewUniform = new Geometry.Uniform<glm.mat4>("iView", Geometry.UniformType.Matrix4, AppState.viewMatrix);
+  AppState.projectionUniform = new Geometry.Uniform<glm.mat4>("iProjection", Geometry.UniformType.Matrix4, AppState.projectionMatrix);
+
+  AppState.timeUniform = new Geometry.Uniform<number>("iTime", Geometry.UniformType.Float, AppState.time);
+  AppState.resolutionUniform = new Geometry.Uniform<Float32Array>("iResolution", Geometry.UniformType.Vector2, resolution);
 }
 
 class Clock {
@@ -318,17 +324,17 @@ function tick() {
   dt = clock.getDt();
   AppState.time += dt;
 
+  gl.clearColor(0.1, 0.3, 0.5, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
   blocksToUpdate.forEach(block => {
     block.Update();
   });
 
-  gl.clearColor(0.1, 0.3, 0.5, 1);
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  //meshBlock.modelMatrix = glm.mat4.rotateY(meshBlock.modelMatrix, meshBlock.modelMatrix, dt*1.0)
 
-  meshBlock.modelMatrix = glm.mat4.rotateY(meshBlock.modelMatrix, meshBlock.modelMatrix, dt*1.0)
-
-  meshBlock.SetInputData(0, true);
-  meshBlock.Update();
+  //meshBlock.SetInputData(0, true);
+  //meshBlock.Update();
 
   // Blocks.BlockTest();
 

@@ -238,6 +238,18 @@ export namespace Geometry {
         constructor(vertexShaderName: string, fragmentShaderName: string, uniforms: BufferUniform) {
             let compiledShader = Material.InitShaders(vertexShaderName, fragmentShaderName)
             this.program = Geometry.Material.CreateProgram(compiledShader.vertex, compiledShader.fragment)
+
+            let uniformsAreProperlySetup = true;
+            for (let i = 0; i < uniforms.uniforms.length; i++) {
+                if (uniforms.uniforms[i] == undefined) {
+                    console.log("[Material, constructor]: passed uniform with index=" + i + "' is undefined!")
+                    uniformsAreProperlySetup = false;
+                }
+            }
+            if (!uniformsAreProperlySetup) {
+                return;
+            }
+
             this.uniforms = uniforms;
             this.uniforms.CacheLocations(this.program);
         }
