@@ -482,37 +482,31 @@ function Foot(props: any) {
     )
 }
 
-/**
- * SVG rendering
- */
+type SVGProps = {
+    path: string,
+    w : number,
+    h: number,
+    grid: GridOptions
+    blocks: GridBlockContainer[],
+    activeBlockIndex: number,
+    addBlockToGrid: any,
+    handleMouseMove: any,
+    setDraggedPoint: any
+}
 
 class SVG extends React.Component {
     render() {
-        // @ts-ignore
         const {
-            // @ts-ignore
             path,
-            // @ts-ignore
             w,
-            // @ts-ignore
             h,
-            // @ts-ignore
             grid,
-            // @ts-ignore
             blocks,
-            // @ts-ignore
             activeBlockIndex,
-            // @ts-ignore
             addBlockToGrid,
-            // @ts-ignore
             handleMouseMove,
-            // @ts-ignore
             setDraggedPoint,
-            // @ts-ignore
-            setDraggedQuadratic,
-            // @ts-ignore
-            setDraggedCubic
-        } = this.props
+        }: SVGProps = this.props as SVGProps
 
         let circles = blocks.map((block: GridBlockContainer, i: any, a: any) => {
             let pos = block.gridPosition; // todo
