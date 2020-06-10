@@ -21,10 +21,36 @@ class GridBlockContainer {
     }
 }
 
+type GridOptions = {
+    show: boolean,
+    snap: boolean,
+    size: number
+}
+
+type ColorRGB = {
+    red: number,
+    green: number,
+    blue: number
+}
+
+type ContainerState = {
+    w: number,
+    h: number,
+    grid: GridOptions,
+    ctrl: boolean,
+    blocks: GridBlockContainer[],
+    activeBlockIndex: number,
+    draggedPoint: boolean,
+    draggedQuadratic: boolean,
+    draggedCubic: boolean,
+    closePath: boolean,
+    color: ColorRGB
+  }
+
 export class Container extends React.Component {
     gridBlocks: GridBlockContainer[] = new Array();
 
-    state = {
+    state: ContainerState = {
         w: window.innerWidth-panelWidth,
         h: window.innerHeight,
         grid: {
@@ -116,9 +142,9 @@ export class Container extends React.Component {
         this.setState({ h: v })
     };
 
-    setGridSize = (e: any) => {
+    setGridSize = (e: React.FormEvent<HTMLSelectElement>) => {
         let grid = this.state.grid
-        let v = this.positiveNumber(e.target.value)
+        let v = this.positiveNumber(e.currentTarget.value)
         let min = 1
         let max = Math.min(this.state.w, this.state.h)
         
@@ -130,25 +156,25 @@ export class Container extends React.Component {
         this.setState({ grid })
     };
     
-    setGridSnap = (e: any) => {
+    setGridSnap = (e: React.FormEvent<HTMLInputElement>) => {
         let grid = this.state.grid
-        grid.snap = e.target.checked
+        grid.snap = e.currentTarget.checked
         
         this.setState({ grid })
     };
     
-    setGridShow = (e: any) => {
+    setGridShow = (e: React.FormEvent<HTMLInputElement>) => {
         let grid = this.state.grid
-        grid.show = e.target.checked
+        grid.show = e.currentTarget.checked
         
         this.setState({ grid })
     };
 
-    setClosePath = (e: any) => {
-        this.setState({ closePath: e.target.checked })
+    setClosePath = (e: React.FormEvent<HTMLInputElement>) => {
+        this.setState({ closePath: e.currentTarget.checked })
     };
     
-    getMouseCoords = (e: any) => {
+    getMouseCoords = (e: React.MouseEvent) => {
         const rect = (ReactDOM.findDOMNode(this.refs.svg) as Element).getBoundingClientRect()
         let x = Math.round(e.clientX - rect.x)
         let y = Math.round(e.clientY - rect.y)
@@ -204,9 +230,9 @@ export class Container extends React.Component {
         */
     };
     
-    setPointXPosition = (e: any) => {
+    setPointXPosition = (e: React.FormEvent<HTMLSelectElement>) => {
         let activeBlockCoords: vec2 = this.state.blocks[this.state.activeBlockIndex].gridPosition;
-        let value = this.positiveNumber(e.target.value)
+        let value = this.positiveNumber(e.currentTarget.value)
         if (value > this.state.w) {
             value = this.state.w
         }
@@ -215,9 +241,9 @@ export class Container extends React.Component {
         this.setPointCoords(activeBlockCoords)
     };
 
-    setPointYPosition = (e: any) => {
+    setPointYPosition = (e: React.FormEvent<HTMLSelectElement>) => {
         let activeBlockCoords: vec2 = this.state.blocks[this.state.activeBlockIndex].gridPosition;
-        let value = this.positiveNumber(e.target.value)
+        let value = this.positiveNumber(e.currentTarget.value)
         if (value > this.state.h) {
             value = this.state.h
         }
@@ -794,7 +820,7 @@ function InspectorControls(props: any) {
                     name="INPUT"
                     type="text"
                     value={ activeBlock.block.GetInputData(0) }
-                    onChange={ (e: any) => {} } />
+                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {} } />
             );
         } break;
 
@@ -805,8 +831,8 @@ function InspectorControls(props: any) {
                     name="INPUT 0"
                     type="text"
                     value={ activeBlock.block.GetInputData(0) }
-                    onChange={ (e: any) => {
-                        let value = e.target.value;
+                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
+                        let value = e.currentTarget.value;
                         let numberValue = parseInt(value);
                         if (!isNaN(numberValue)) {
                             activeBlock.block.SetInputData(0, numberValue);
@@ -817,8 +843,8 @@ function InspectorControls(props: any) {
                     name="INPUT 1"
                     type="text"
                     value={ activeBlock.block.GetInputData(1) }
-                    onChange={ (e: any) => {
-                        let value = e.target.value;
+                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
+                        let value = e.currentTarget.value;
                         let numberValue = parseInt(value);
                         if (!isNaN(numberValue)) {
                             activeBlock.block.SetInputData(1, parseInt(value));
@@ -829,7 +855,7 @@ function InspectorControls(props: any) {
                     name="OUTPUT"
                     type="text"
                     value={ activeBlock.block.GetOutputData(0) }
-                    onChange={ (e: any) => {} } />
+                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {} } />
                 </div>
             )
         } break;
@@ -840,7 +866,7 @@ function InspectorControls(props: any) {
                     name="OUTPUT"
                     type="text"
                     value={ activeBlock.block.outputs.sockets[0].data }
-                    onChange={ (e: any) => {} } />
+                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {} } />
             );
         } break;
 
@@ -851,12 +877,12 @@ function InspectorControls(props: any) {
                     name="INPUT"
                     type="text"
                     value={ activeBlock.block.GetInputData(0) }
-                    onChange={ (e: any) => {} } />
+                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {} } />
                 <Control
                     name="OUTPUT"
                     type="text"
                     value={ activeBlock.block.GetOutputData(0) }
-                    onChange={ (e: any) => {} } />
+                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {} } />
                 </div>
             );
         } break;
@@ -879,24 +905,24 @@ function InspectorControls(props: any) {
                     name="Red"
                     type="text"
                     value={ props.color.red }
-                    onChange={ (e: any) => {
-                        props.color.red = e.target.value
+                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
+                        props.color.red = e.currentTarget.value
                         Main.UpdateColor(props.color.red, props.color.green, props.color.blue);
                     } } />
                 <Control
                     name="Green"
                     type="text"
                     value={ props.color.green }
-                    onChange={ (e: any) => {
-                        props.color.green = e.target.value
+                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
+                        props.color.green = e.currentTarget.value
                         Main.UpdateColor(props.color.red, props.color.green, props.color.blue);
                     } } />
                 <Control
                     name="Blue"
                     type="text"
                     value={ props.color.blue }
-                    onChange={ (e: any) => {
-                        props.color.blue = e.target.value
+                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
+                        props.color.blue = e.currentTarget.value
                         Main.UpdateColor(props.color.red, props.color.green, props.color.blue);
                     } } />
             </div>
@@ -905,24 +931,24 @@ function InspectorControls(props: any) {
                     name="Grid size"
                     type="text"
                     value={ props.grid.size }
-                    onChange={ (e: any) => props.setGridSize(e) } />
+                    onChange={ (e: React.FormEvent<HTMLInputElement>) => props.setGridSize(e) } />
                 <Control
                     name="Snap grid"
                     type="checkbox"
                     checked={ props.grid.snap }
-                    onChange={ (e: any) => props.setGridSnap(e) } />
+                    onChange={ (e: React.FormEvent<HTMLInputElement>) => props.setGridSnap(e) } />
                 <Control
                     name="Show grid"
                     type="checkbox"
                     checked={ props.grid.show }
-                    onChange={ (e: any) => props.setGridShow(e) } />
+                    onChange={ (e: React.FormEvent<HTMLInputElement>) => props.setGridShow(e) } />
             </div>
             <div className="ad-Controls-container">
                 <Control
                     type="button"
                     action="reset"
                     value="Reset path"
-                    onClick={ (e: any) => props.reset(e) } />
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
             </div>
                     
             <h3 className="ad-Controls-title">
