@@ -11,6 +11,8 @@ import {Geometry} from './renderer/geometry';
 import * as glm from 'gl-matrix';
 
 import {Blocks} from './blocks'
+
+import * as Utility from './utility'
 //import * as index from './index';
 //index.default.x
 
@@ -28,7 +30,14 @@ export function UpdateColor(r: number, g: number, b: number) {
   updateC(r, g, b);
 }
 
+let blocksToUpdate: Blocks.BasicBlock[];
+export function SetBlockToUpdate(block: Blocks.BasicBlock) {
+  blocksToUpdate.push(block);
+}
+
 window.onload = () => {
+  blocksToUpdate = new Array();
+
   ReactDOM.render (
     <App color="Blue" />,
       document.getElementById("root")
@@ -42,8 +51,8 @@ window.onload = () => {
 
   // ---------- create a camera matrix
   AppState.viewMatrix = glm.mat4.create();
-  AppState.cameraPosition = MakeVec3(0, 0, 10);
-  glm.mat4.lookAt(AppState.viewMatrix, AppState.cameraPosition, MakeVec3(0, 0, 0), MakeVec3(0, 1, 0))
+  AppState.cameraPosition = Utility.MakeVec3(0, 0, 10);
+  glm.mat4.lookAt(AppState.viewMatrix, AppState.cameraPosition, Utility.MakeVec3(0, 0, 0), Utility.MakeVec3(0, 1, 0))
 
   // ---------- create a projection matrix
   AppState.projectionMatrix = glm.mat4.create();
@@ -54,9 +63,9 @@ window.onload = () => {
   resolution[1] = Config.CanvasHeight;
   AppState.resolution = resolution;
 
-  AppState.lightPosition = MakeVec3(0, 0.6, 2.5);
+  AppState.lightPosition = Utility.MakeVec3(0, 0.6, 2.5);
 
-  AppState.lightPositionUniform = new Geometry.Uniform<glm.vec3>("iLightPosition", Geometry.UniformType.Vector3, MakeVec3(0.0, 0.0, 0.0));
+  AppState.lightPositionUniform = new Geometry.Uniform<glm.vec3>("iLightPosition", Geometry.UniformType.Vector3, Utility.MakeVec3(0.0, 0.0, 0.0));
   AppState.cameraPositionUniform = new Geometry.Uniform<glm.vec3>("iViewPosition", Geometry.UniformType.Vector3, AppState.cameraPosition);
   AppState.viewUniform = new Geometry.Uniform<glm.mat4>("iView", Geometry.UniformType.Matrix4, AppState.viewMatrix);
   AppState.projectionUniform = new Geometry.Uniform<glm.mat4>("iProjection", Geometry.UniformType.Matrix4, AppState.projectionMatrix);
@@ -271,17 +280,15 @@ class Clock {
 let dt = 0.0
 let clock = new Clock()
 
-function MakeVec3(x: number, y: number, z: number) {
-  let v = glm.vec3.create();
-  glm.vec3.set(v, x, y, z);
-  return v;
-}
-
 function tick() {
   requestAnimationFrame(tick);
 
   dt = clock.getDt();
   AppState.time += dt;
+
+  blocksToUpdate.forEach(block => {
+    block.Update();
+  });
 
   gl.clearColor(0.1, 0.3, 0.5, 1);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);

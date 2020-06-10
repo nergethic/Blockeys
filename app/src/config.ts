@@ -1,5 +1,5 @@
 export namespace Config {
-    export let CanvasWidth: number = 512;
+    export let CanvasWidth: number = (512 * 1.618033);
     export let CanvasHeight: number = 512;
     export let RenderCanvasID: string = 'glCanvas';
     export let BlocksCanvasID: string = 'blocksCanvas';

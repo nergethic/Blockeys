@@ -10,9 +10,11 @@ export namespace Blocks {
         Basic,
         MathAddition,
         MathSubstraction,
+        MathSin,
         GenerateMesh,
         MeshRendering,
-        DisplayInput
+        DisplayInput,
+        Time
     } 
 
     class Socket<SocketType> {
@@ -178,6 +180,24 @@ export namespace Blocks {
         }
     }
 
+    export class MathSinBlock extends BasicBlock {
+        constructor() {
+            let input  = new SocketGroup([
+                new Socket<number>("input", 0.0),
+            ]);
+            let output  = new SocketGroup([
+                new Socket<number>("output", 0.0),
+            ]);
+            super(BlockType.MathSin, input, output);
+        }
+
+        Update() {
+            this.SetOutputData(0, Math.sin(this.GetInputData(0)));
+
+            super.Update();
+        }
+    }
+
     export class DisplayInputBlock extends BasicBlock {
         constructor() {
             let inputs  = new SocketGroup([
@@ -190,6 +210,20 @@ export namespace Blocks {
             let result = this.GetInputData<number>(0);
             console.log(result)
 
+            super.Update();
+        }
+    }
+
+    export class TimeBlock extends BasicBlock {
+        constructor() {
+            let output  = new SocketGroup([
+                new Socket<number>("time", 0.0),
+            ]);
+            super(BlockType.Time, new SocketGroup(), output);
+        }
+
+        Update() {
+            this.SetOutputData(0, AppState.time);
             super.Update();
         }
     }

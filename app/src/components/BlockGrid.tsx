@@ -4,15 +4,17 @@ import '../styles/main.scss';
 import { Config } from '../config';
 import * as Main from '../index'
 import { Blocks } from '../blocks';
+import { vec2 } from 'gl-matrix';
+import * as Utility from '../utility'
 
-let panelWidth = 512 + 2;
+let panelWidth = Config.CanvasWidth + 2;
 
 class GridBlockContainer {
-    gridPosition: any;
+    gridPosition: vec2;
     block: Blocks.BasicBlock;
     type: Blocks.BlockType;
 
-    constructor(block: Blocks.BasicBlock, gridPosition: any) {
+    constructor(block: Blocks.BasicBlock, gridPosition: vec2) {
         this.block = block;
         this.type = block.blockType;
         this.gridPosition = gridPosition;
@@ -44,7 +46,7 @@ export class Container extends React.Component {
         }
     };
     
-    componentWillMount() {
+    UNSAFE_componentWillMount() {
         document.addEventListener("keydown", this.handleKeyDown, false)
         document.addEventListener("keyup", this.handleKeyUp, false)
 
@@ -57,11 +59,23 @@ export class Container extends React.Component {
 
         additionBlock.Update();
 
-        let additionBlockGridContainer = new GridBlockContainer(additionBlock, {x: 100, y: 300});
-        let displayInputBlockGridContainer = new GridBlockContainer(displayInputBlock, {x: 500, y: 300});
+        let additionBlockGridContainer = new GridBlockContainer(additionBlock, Utility.MakeVec2(100, 300));
+        let displayInputBlockGridContainer = new GridBlockContainer(displayInputBlock, Utility.MakeVec2(500, 300));
+
+        let timeBlock = new Blocks.TimeBlock();
+        let sinBlock = new Blocks.MathSinBlock();
+        timeBlock.ConnectSocket(timeBlock.outputs.sockets[0], sinBlock.inputs.sockets[0]);
+
+        let timeBlockGridContainer = new GridBlockContainer(timeBlock, Utility.MakeVec2(100, 700));
+        let sinBlockGridContainer = new GridBlockContainer(sinBlock, Utility.MakeVec2(500, 700));
 
         this.gridBlocks.push(additionBlockGridContainer);
         this.gridBlocks.push(displayInputBlockGridContainer);
+
+        this.gridBlocks.push(timeBlockGridContainer);
+        this.gridBlocks.push(sinBlockGridContainer);
+
+        Main.SetBlockToUpdate(timeBlock);
 
         //[
             //{ block: this.gridBlocks[0], x: 100, y: 300 },
@@ -74,7 +88,7 @@ export class Container extends React.Component {
         //],
     }
     
-    componentWillUnmount() {
+    UNSAFE_componentWillUnmount() {
         // @ts-ignore
         document.removeEventListener("keydown")
         // @ts-ignore
@@ -144,7 +158,7 @@ export class Container extends React.Component {
             y = this.state.grid.size * Math.round(y / this.state.grid.size)
         //}
         
-        return { x, y }
+        return Utility.MakeVec2(x, y)
     };
     
     setBlockType = (e: any) => {
@@ -190,54 +204,37 @@ export class Container extends React.Component {
         */
     };
     
-    setPointPosition = (coord: string, e: any) => {
-        let coords = this.state.blocks[this.state.activeBlockIndex].gridPosition;
+    setPointXPosition = (e: any) => {
+        let activeBlockCoords: vec2 = this.state.blocks[this.state.activeBlockIndex].gridPosition;
         let value = this.positiveNumber(e.target.value)
+        if (value > this.state.w) {
+            value = this.state.w
+        }
+        activeBlockCoords[0] = value
 
-        if (coord === "x" && value > this.state.w) value = this.state.w
-        if (coord === "y" && value > this.state.h) value = this.state.h
+        this.setPointCoords(activeBlockCoords)
+    };
+
+    setPointYPosition = (e: any) => {
+        let activeBlockCoords: vec2 = this.state.blocks[this.state.activeBlockIndex].gridPosition;
+        let value = this.positiveNumber(e.target.value)
+        if (value > this.state.h) {
+            value = this.state.h
+        }
         
-        // @ts-ignore
-        coords[coord] = value
+        activeBlockCoords[1] = value
 
-        this.setPointCoords(coords)
+        this.setPointCoords(activeBlockCoords)
     };
     
-    setQuadraticPosition = (coord: any, e: any) => {
-        let coords = this.state.blocks[this.state.activeBlockIndex].gridPosition;
-        let value = this.positiveNumber(e.target.value)
-
-        if (coord === "x" && value > this.state.w) value = this.state.w
-        if (coord === "y" && value > this.state.h) value = this.state.h
-
-        // @ts-ignore
-        coords[coord] = value
-
-        this.setQuadraticCoords(coords)
-    };
-    
-    setCubicPosition = (coord: any, anchor: any, e: any) => {
-    };
-    
-    setPointCoords = (coords: any) => {
+    setPointCoords = (coords: vec2) => {
         const blocks = this.state.blocks
-        const activeBlockIndex = this.state.activeBlockIndex
+        const activeBlock: GridBlockContainer = blocks[this.state.activeBlockIndex]
+        activeBlock.gridPosition = coords
 
-        blocks[activeBlockIndex].gridPosition.x = coords.x
-        blocks[activeBlockIndex].gridPosition.y = coords.y
-        
         this.setState({ blocks })
     };
-    
-    setQuadraticCoords = (coords: any) => {
-        const blocks = this.state.blocks
-        const activeBlockIndex = this.state.activeBlockIndex
-        
-        //blocks[active].q.x = coords.x
-        //blocks[active].q.y = coords.y
-        
-        this.setState({ blocks })
-    };
+
     
     setArcParam = (param: any, e: any) => {
         const blocks = this.state.blocks
@@ -341,8 +338,6 @@ export class Container extends React.Component {
         if ( ! this.state.ctrl) {
             if (this.state.draggedPoint) {
                 this.setPointCoords(this.getMouseCoords(e))
-            } else if (this.state.draggedQuadratic) {
-                this.setQuadraticCoords(this.getMouseCoords(e))
             } else if (this.state.draggedCubic !== false) {
                 this.setCubicCoords(this.getMouseCoords(e), this.state.draggedCubic)
             }
@@ -425,9 +420,8 @@ export class Container extends React.Component {
                         { ...this.state }
                         reset={ this.reset }
                         removeActiveBlock={ this.removeActiveBlock }
-                        setPointPosition={ this.setPointPosition }
-                        setQuadraticPosition={ this.setQuadraticPosition }
-                        setCubicPosition={ this.setCubicPosition }
+                        setPointXPosition={ this.setPointXPosition }
+                        setPointYPosition={ this.setPointYPosition }
                         setArcParam={ this.setArcParam }
                         setBlockType={ this.setBlockType }
                         //setWidth={ this.setWidth }
@@ -503,8 +497,8 @@ class SVG extends React.Component {
             // generate inputs
             for (let i = 0; i < block.block.inputs.sockets.length; i++) {
                 let elem = <RectSocket 
-                    x={ pos.x }
-                    y={ pos.y + 20*i }
+                    x={ pos[0] }
+                    y={ pos[1] + 20*i }
                 />;
 
                 table.push(elem);
@@ -513,8 +507,8 @@ class SVG extends React.Component {
             // generate outputs TODO this is ugly and ineficcient
             for (let i = 0; i < block.block.outputs.sockets.length; i++) {
                 table.push(<RectSocket 
-                    x={ pos.x + 205 } // TODO: 300 to block length
-                    y={ pos.y + 20*i }
+                    x={ pos[0] + 205 } // TODO: 300 to block length
+                    y={ pos[1] + 20*i }
                 />);
 
                 // find and draw connections
@@ -530,10 +524,10 @@ class SVG extends React.Component {
                                         table.push(<g className="ad-Anchor">
                                             <line
                                                 className="ad-Anchor-line"
-                                                x1={ pos.x + 205 }
-                                                y1={ pos.y + 20*i }
-                                                x2={ b.gridPosition.x}
-                                                y2={ b.gridPosition.y} />
+                                                x1={ pos[0] + 205 }
+                                                y1={ pos[1] + 20*i }
+                                                x2={ b.gridPosition[0]}
+                                                y2={ b.gridPosition[1]} />
                                                 </g>);
                                     }
                                 }
@@ -551,8 +545,8 @@ class SVG extends React.Component {
                 }>
                     <Rect
                         index={ i }
-                        x={ pos.x }
-                        y={ pos.y }
+                        x={ pos[0] }
+                        y={ pos[1] }
                         setDraggedPoint={ setDraggedPoint } />
 
                     {table}
@@ -839,6 +833,33 @@ function InspectorControls(props: any) {
                 </div>
             )
         } break;
+
+        case Blocks.BlockType.Time: {
+            params.push(
+                <Control
+                    name="OUTPUT"
+                    type="text"
+                    value={ activeBlock.block.outputs.sockets[0].data }
+                    onChange={ (e: any) => {} } />
+            );
+        } break;
+
+        case Blocks.BlockType.MathSin: {
+            params.push(
+                <div className="ad-Controls-container">
+                <Control
+                    name="INPUT"
+                    type="text"
+                    value={ activeBlock.block.GetInputData(0) }
+                    onChange={ (e: any) => {} } />
+                <Control
+                    name="OUTPUT"
+                    type="text"
+                    value={ activeBlock.block.GetOutputData(0) }
+                    onChange={ (e: any) => {} } />
+                </div>
+            );
+        } break;
     }
         
     return (
@@ -932,8 +953,8 @@ function InspectorControls(props: any) {
                     min={ 0 }
                     max={ props.w }
                     step={ step }
-                    value={ activeBlock.gridPosition.x }
-                    onChange={ (e: any) => props.setPointPosition("x", e) } />
+                    value={ activeBlock.gridPosition[0] }
+                    onChange={ (e: any) => props.setPointXPosition(e) } />
             </div>
             <div className="ad-Controls-container">
                 <Control
@@ -942,8 +963,8 @@ function InspectorControls(props: any) {
                     min={ 0 }
                     max={ props.h }
                     step={ step }
-                    value={ activeBlock.gridPosition.y }
-                    onChange={ (e: any) => props.setPointPosition("y", e) } />
+                    value={ activeBlock.gridPosition[1] }
+                    onChange={ (e: any) => props.setPointYPosition(e) } />
             </div>
             
             {(
