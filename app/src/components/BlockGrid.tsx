@@ -40,6 +40,7 @@ type ContainerState = {
     ctrl: boolean,
     blocks: GridBlockContainer[],
     activeBlockIndex: number,
+    blockKey: string,
     draggedPoint: boolean,
     draggedQuadratic: boolean,
     draggedCubic: boolean,
@@ -67,6 +68,7 @@ export class Container extends React.Component {
         ctrl: false,
         blocks: this.gridBlocks,
         activeBlockIndex: 0,
+        blockKey: "0",
         draggedPoint: false,
         draggedQuadratic: false,
         draggedCubic: false,
@@ -114,6 +116,10 @@ export class Container extends React.Component {
             let meshBlock = Main.CreateBlock(Blocks.BlockType.GenerateMesh, true);
             let meshBlockBlockGridContainer = new GridBlockContainer(meshBlock, Utility.MakeVec2(0, 900));
             this.gridBlocks.push(meshBlockBlockGridContainer);
+
+            //let asdads = Main.CreateBlock(Blocks.BlockType.GenerateMesh, true);
+            //let meshBlockBlockGridContainer2 = new GridBlockContainer(meshBlock2, Utility.MakeVec2(0, 200));
+            //this.gridBlocks.push(meshBlockBlockGridContainer2);
         }
     }
     
@@ -331,12 +337,8 @@ export class Container extends React.Component {
     }
 
     reset = (e: any) => {
-        let w = this.state.w, h = this.state.h
-        
-        this.setState({
-            blocks: [{ x: w / 2, y: h / 2 }],
-            activeBlockIndex: 0
-        })
+        let newKeyValue: string = new Date().getTime().toFixed();
+        this.setState({ blockKey: newKeyValue });
     };
 
     render() {
@@ -354,6 +356,7 @@ export class Container extends React.Component {
                             addBlockToGrid={ this.addBlockToGrid }
                             setDraggedPoint={ this.setDraggedPoint }
                             handleMouseMove={ this.handleMouseMove }
+                            reset={this.reset}
                             />
                     </div>
                 </div>
@@ -362,6 +365,7 @@ export class Container extends React.Component {
                     <WebGLCanvas 
                     { ...this.state } />
                     <InspectorControls
+                        key={this.state.blockKey}
                         { ...this.state }
                         reset={ this.reset }
                         removeActiveBlock={ this.removeActiveBlock }
@@ -411,6 +415,7 @@ type SVGProps = {
     addBlockToGrid: any,
     handleMouseMove: any,
     setDraggedPoint: any
+    reset: any
 }
 
 class SVG extends React.Component {
@@ -425,6 +430,7 @@ class SVG extends React.Component {
             addBlockToGrid,
             handleMouseMove,
             setDraggedPoint,
+            reset
         }: SVGProps = this.props as SVGProps
 
         let circles = blocks.map((block: GridBlockContainer, i: any, a: any) => {
@@ -486,6 +492,7 @@ class SVG extends React.Component {
                         index={ i }
                         x={ pos[0] }
                         y={ pos[1] }
+                        reset={reset}
                         setDraggedPoint={ setDraggedPoint } />
 
                     {table}
@@ -636,7 +643,10 @@ function Rect(props: any) {
     return (
         <rect
             className="ad-Rect"
-            onMouseDown={ (e) => props.setDraggedPoint(props.index) }
+            onMouseDown={ (e) => {
+                props.setDraggedPoint(props.index);
+                props.reset();
+            } }
             x={ props.x }
             y={ props.y }
             width={ 220 }
