@@ -212,9 +212,9 @@ export class Container extends React.Component {
     };
     
     setBlockType = (e: any) => {
-        const blockContainers = this.state.blockContainers;
-        const activeBlockIndex = this.state.activeBlockIndex;
-        const activeBlock: GridBlockContainer = blockContainers[activeBlockIndex];
+        //const blockContainers = this.state.blockContainers;
+        //const activeBlockIndex = this.state.activeBlockIndex;
+        //const activeBlock: GridBlockContainer = blockContainers[activeBlockIndex];
     };
     
     setPointXPosition = (e: React.FormEvent<HTMLSelectElement>) => {
@@ -505,12 +505,12 @@ class SVG extends React.Component {
         })
 
         return (
+            // grid
             <svg
                 key={blockKey}
                 className="ad-SVG"
                 width={ w }
                 height={ h }
-                onClick={ (e) => addBlockToGrid(e) }
                 onMouseMove={ (e) => handleMouseMove(e) }>
                 <Grid
                     w={ w }
@@ -907,6 +907,7 @@ class GenerateMeshInspector extends React.Component<any, any> {
 
 function InspectorControls(props: any) {
     if (props.activeBlockIndex < 0 || props.activeBlockIndex >= props.blockContainers.length) {
+        alert("ERROR: invalid activeBlockIndex: " + props.activeBlockIndex)
         console.log("ERROR: invalid activeBlockIndex: " + props.activeBlockIndex);
         return;
     }
@@ -1031,7 +1032,9 @@ function InspectorControls(props: any) {
                     activeBlockCasted={activeBlockCasted}
                     updateBlocks={props.updateBlocks} />
             );
-        }
+        } break;
+
+        default: alert("[InspectorControls]: invalid block type");
     }
         
     return (
@@ -1123,7 +1126,7 @@ function InspectorControls(props: any) {
                     type="button"
                     action="reset"
                     value="SUB"
-                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                    onClick={ (e: React.MouseEvent) => addNewBlock(e, "SUB") } />
                 <Control
                     type="button"
                     action="reset"
