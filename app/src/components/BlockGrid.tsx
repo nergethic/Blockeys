@@ -79,10 +79,15 @@ export class Container extends React.Component {
             blue: 25
         }
     };
+
+    handleWindowSize(e: any) {
+        this.reset(e);
+    }
     
     UNSAFE_componentWillMount() {
         document.addEventListener("keydown", this.handleKeyDown, false)
         document.addEventListener("keyup", this.handleKeyUp, false)
+        window.addEventListener("resize", this.handleWindowSize);
 
         let additionBlock = Main.CreateBlock(Blocks.BlockType.MathAddition, false);
             let displayInputBlock = Main.CreateBlock(Blocks.BlockType.DisplayInput, false);
@@ -309,28 +314,6 @@ export class Container extends React.Component {
         let { blocks, closePath } = this.state
         let d = ""
         
-        /*
-        blocks.forEach((p, i) => {
-            if (i === 0) {
-                // first point
-                d += "M "
-            } else if (p.q) {
-                // quadratic
-                d += `Q ${ p.q.x } ${ p.q.y } `
-            } else if (p.c) {
-                // cubic
-                d += `C ${ p.c[0].x } ${ p.c[0].y } ${ p.c[1].x } ${ p.c[1].y } `
-            } else if (p.a) {
-                // arc
-                d += `A ${ p.a.rx } ${ p.a.ry } ${ p.a.rot } ${ p.a.laf } ${ p.a.sf } `
-            } else {
-                d += "L "
-            }
-
-            d += `${ p.x } ${ p.y } `
-        })
-        */
-        
         if (closePath) d += "Z"
         
         return d
@@ -349,6 +332,8 @@ export class Container extends React.Component {
                 <div className="ad-Container-main">                    
                     <div className="ad-Container-svg">
                         <SVG
+                            key={this.state.blockKey}
+                            blockKey={this.state.blockKey}
                             ref="svg"
                             path={ this.generatePath() }
                             { ...this.state }
@@ -406,6 +391,7 @@ function Foot(props: any) {
 }
 
 type SVGProps = {
+    blockKey: string
     path: string,
     w : number,
     h: number,
@@ -421,6 +407,7 @@ type SVGProps = {
 class SVG extends React.Component {
     render() {
         const {
+            blockKey,
             path,
             w,
             h,
@@ -502,6 +489,7 @@ class SVG extends React.Component {
 
         return (
             <svg
+                key={blockKey}
                 className="ad-SVG"
                 width={ w }
                 height={ h }
@@ -604,8 +592,8 @@ function Rect(props: any) {
             } }
             x={ props.x }
             y={ props.y }
-            width={ 220 }
-            height={ 120 }
+            width={ 175 }
+            height={ 88 }
             rx={ 0 }
             style={styles}
         />
@@ -707,6 +695,199 @@ class VolatileText extends React.Component<VolatileTextProps, VolatileTextState>
     }
 }
 
+/*
+<Control
+                    name="X"
+                    type="range"
+                    min={ -4 }
+                    max={ 4 }
+                    step={ 0.1 }
+                    value={ mat4.getTranslation(Utility.MakeVec3(0,0,0), activeBlockCasted.modelMatrix)[0] }
+                    onChange={ (e: React.FormEvent<HTMLInputElement>) => {
+                        let currentTranslation = Utility.MakeVec3(0,0,0);
+                        currentTranslation = mat4.getTranslation(currentTranslation, activeBlockCasted.modelMatrix)
+                        let newMatrix = mat4.create();
+                        newMatrix = mat4.translate(newMatrix, newMatrix, Utility.MakeVec3(parseFloat(e.currentTarget.value), currentTranslation[1], currentTranslation[2]));
+                        activeBlockCasted.modelMatrix = newMatrix;
+                        props.updateBlocks();
+                    } } />
+*/
+
+class GenerateMeshInspector extends React.Component<any, any> {
+    public readonly state = {
+        positionInputValues: Utility.MakeVec3(0, 0, 0),
+    };
+
+    elementNames: string[];
+    positionSliderMax: number;
+
+    constructor(props: any) {
+        super(props);
+
+        this.elementNames = new Array(3);
+        this.elementNames[0] = "X";
+        this.elementNames[1] = "Y";
+        this.elementNames[2] = "Z";
+
+        this.positionSliderMax = 4;
+    }
+
+    UpdateState() {
+        this.setState({
+            positionInputValues: [
+                this.GetPositionInputValue(0),
+                this.GetPositionInputValue(1),
+                this.GetPositionInputValue(2)
+            ]
+        })
+    }
+    
+    GetPositionInputValue = (positionCoord: number): number => {
+        if (positionCoord < 0 || positionCoord >= 3) {
+            alert("positionCoord should be equal to (0 - x), (1 - y) or (2 - z), current value: " + positionCoord);
+            return 0;
+        }
+
+        return mat4.getTranslation(Utility.MakeVec3(0,0,0), this.props.activeBlockCasted.modelMatrix)[positionCoord]
+    };
+
+    onPositionChange = (e: React.FormEvent<HTMLInputElement>, positionCoord: number) => {
+        let position = Utility.MakeVec3(0,0,0);
+        position = mat4.getTranslation(position, this.props.activeBlockCasted.modelMatrix)
+        let newMatrix = mat4.create();
+        let parsedValue = parseFloat(e.currentTarget.value);
+
+        if (positionCoord < 0 || positionCoord >= 3) {
+            alert("positionCoord should be equal to (0 - x), (1 - y) or (2 - z), current value: " + positionCoord);
+            return;
+        }
+
+        position[positionCoord] = parsedValue;
+
+        newMatrix = mat4.translate(newMatrix, newMatrix, position);
+        this.props.activeBlockCasted.modelMatrix = newMatrix;
+        this.UpdateState();
+    }
+
+    onPositionXChange = (e: React.FormEvent<HTMLInputElement>) => this.onPositionChange(e, 0);
+    onPositionYChange = (e: React.FormEvent<HTMLInputElement>) => this.onPositionChange(e, 1);
+    onPositionZChange = (e: React.FormEvent<HTMLInputElement>) => this.onPositionChange(e, 2);
+
+    /*
+    <Control
+            name="Red"
+            type="text"
+            value={ props.color.red }
+            onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
+                props.color.red = e.currentTarget.value
+                let r = props.color.red;
+                let g = props.color.green;
+                let b = props.color.blue;
+                if (r < 0) {
+                    r = 0;
+                  }
+                  if (r > 255) {
+                    r = 255;
+                  }
+                  if (g < 0) {
+                    g = 0;
+                  }
+                  if (g > 255) {
+                    g = 255;
+                  }
+                  if (b < 0) {
+                    b = 0;
+                  }
+                  if (b > 255) {
+                    b = 255;
+                  }
+                  props.color.red = r;
+                  activeBlockCasted.tint = new Float32Array([r/255.0, g/255.0, b/255.0]);
+            } } />
+        <Control
+            name="Green"
+            type="text"
+            value={ props.color.green }
+            onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
+                props.color.green = e.currentTarget.value
+                let r = props.color.red;
+                let g = props.color.green;
+                let b = props.color.blue;
+                if (r < 0) {
+                    r = 0;
+                  }
+                  if (r > 255) {
+                    r = 255;
+                  }
+                  if (g < 0) {
+                    g = 0;
+                  }
+                  if (g > 255) {
+                    g = 255;
+                  }
+                  if (b < 0) {
+                    b = 0;
+                  }
+                  if (b > 255) {
+                    b = 255;
+                  }
+                  props.color.green = g;
+                  activeBlockCasted.tint = new Float32Array([r/255.0, g/255.0, b/255.0]);
+            } } />
+        <Control
+            name="Blue"
+            type="text"
+            value={ props.color.blue }
+            onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
+                props.color.blue = e.currentTarget.value
+                let r = props.color.red;
+                let g = props.color.green;
+                let b = props.color.blue;
+                if (r < 0) {
+                    r = 0;
+                  }
+                  if (r > 255) {
+                    r = 255;
+                  }
+                  if (g < 0) {
+                    g = 0;
+                  }
+                  if (g > 255) {
+                    g = 255;
+                  }
+                  if (b < 0) {
+                    b = 0;
+                  }
+                  if (b > 255) {
+                    b = 255;
+                  }
+                  props.color.blue = b;
+                  activeBlockCasted.tint = new Float32Array([r/255.0, g/255.0, b/255.0]);
+            } } />
+    */
+    
+    render() {
+        let positionSliderControls: JSX.Element[] = new Array(3);
+        for (let i = 0; i < 3; i++) {
+            positionSliderControls[i] = 
+            <RangeControl
+                name={this.elementNames[i]}
+                min={-this.positionSliderMax}
+                max={this.positionSliderMax}
+                step={0.1}
+                inputValue={ this.state.positionInputValues[i].toFixed(2) }
+                onChange={ (e: any) => this.onPositionChange(e, i) }
+            />
+        }
+
+        return(
+            <div className="ad-Controls-container">
+                {positionSliderControls}
+            </div>
+        );
+    }
+}
+
 function InspectorControls(props: any) {
     if (props.activeBlockIndex < 0 || props.activeBlockIndex >= props.blocks.length) {
         console.log("ERROR: invalid activeBlockIndex: " + props.activeBlockIndex);
@@ -801,146 +982,10 @@ function InspectorControls(props: any) {
         case Blocks.BlockType.GenerateMesh: {
             let activeBlockCasted = activeBlock.block as Blocks.GenerateCubeMeshBlock;
             params.push(
-                <div className="ad-Controls-container">
-                <Control
-                    name="Red"
-                    type="text"
-                    value={ props.color.red }
-                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
-                        props.color.red = e.currentTarget.value
-                        let r = props.color.red;
-                        let g = props.color.green;
-                        let b = props.color.blue;
-                        if (r < 0) {
-                            r = 0;
-                          }
-                          if (r > 255) {
-                            r = 255;
-                          }
-                          if (g < 0) {
-                            g = 0;
-                          }
-                          if (g > 255) {
-                            g = 255;
-                          }
-                          if (b < 0) {
-                            b = 0;
-                          }
-                          if (b > 255) {
-                            b = 255;
-                          }
-                          props.color.red = r;
-                          activeBlockCasted.tint = new Float32Array([r/255.0, g/255.0, b/255.0]);
-                    } } />
-                <Control
-                    name="Green"
-                    type="text"
-                    value={ props.color.green }
-                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
-                        props.color.green = e.currentTarget.value
-                        let r = props.color.red;
-                        let g = props.color.green;
-                        let b = props.color.blue;
-                        if (r < 0) {
-                            r = 0;
-                          }
-                          if (r > 255) {
-                            r = 255;
-                          }
-                          if (g < 0) {
-                            g = 0;
-                          }
-                          if (g > 255) {
-                            g = 255;
-                          }
-                          if (b < 0) {
-                            b = 0;
-                          }
-                          if (b > 255) {
-                            b = 255;
-                          }
-                          props.color.green = g;
-                          activeBlockCasted.tint = new Float32Array([r/255.0, g/255.0, b/255.0]);
-                    } } />
-                <Control
-                    name="Blue"
-                    type="text"
-                    value={ props.color.blue }
-                    onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
-                        props.color.blue = e.currentTarget.value
-                        let r = props.color.red;
-                        let g = props.color.green;
-                        let b = props.color.blue;
-                        if (r < 0) {
-                            r = 0;
-                          }
-                          if (r > 255) {
-                            r = 255;
-                          }
-                          if (g < 0) {
-                            g = 0;
-                          }
-                          if (g > 255) {
-                            g = 255;
-                          }
-                          if (b < 0) {
-                            b = 0;
-                          }
-                          if (b > 255) {
-                            b = 255;
-                          }
-                          props.color.blue = b;
-                          activeBlockCasted.tint = new Float32Array([r/255.0, g/255.0, b/255.0]);
-                    } } />
-
-                <div className="ad-Controls-container">
-                <Control
-                    name="X"
-                    type="range"
-                    min={ -4 }
-                    max={ 4 }
-                    step={ 0.1 }
-                    value={ mat4.getTranslation(Utility.MakeVec3(0,0,0), activeBlockCasted.modelMatrix)[0] }
-                    onChange={ (e: React.FormEvent<HTMLInputElement>) => {
-                        let currentTranslation = Utility.MakeVec3(0,0,0);
-                        currentTranslation = mat4.getTranslation(currentTranslation, activeBlockCasted.modelMatrix)
-                        let newMatrix = mat4.create();
-                        newMatrix = mat4.translate(newMatrix, newMatrix, Utility.MakeVec3(parseFloat(e.currentTarget.value), currentTranslation[1], currentTranslation[2]));
-                        activeBlockCasted.modelMatrix = newMatrix;
-                        props.updateBlocks();
-                    } } />
-                    <Control
-                    name="Y"
-                    type="range"
-                    min={ -4 }
-                    max={ 4 }
-                    step={ 0.1 }
-                    value={ mat4.getTranslation(Utility.MakeVec3(0,0,0), activeBlockCasted.modelMatrix)[1] }
-                    onChange={ (e: React.FormEvent<HTMLInputElement>) => {
-                        let currentTranslation = Utility.MakeVec3(0,0,0);
-                        currentTranslation = mat4.getTranslation(currentTranslation, activeBlockCasted.modelMatrix)
-                        let newMatrix = mat4.create();
-                        newMatrix = mat4.translate(newMatrix, newMatrix, Utility.MakeVec3(currentTranslation[0], parseFloat(e.currentTarget.value), currentTranslation[2]));
-                        activeBlockCasted.modelMatrix = newMatrix;
-                        props.updateBlocks();
-                    } } />
-                    <Control
-                    name="Z"
-                    type="range"
-                    min={ -4 }
-                    max={ 4 }
-                    step={ 0.1 }
-                    value={ mat4.getTranslation(Utility.MakeVec3(0,0,0), activeBlockCasted.modelMatrix)[2] }
-                    onChange={ (e: React.FormEvent<HTMLInputElement>) => {
-                        let currentTranslation = Utility.MakeVec3(0,0,0);
-                        currentTranslation = mat4.getTranslation(currentTranslation, activeBlockCasted.modelMatrix)
-                        let newMatrix = mat4.create();
-                        newMatrix = mat4.translate(newMatrix, newMatrix, Utility.MakeVec3(currentTranslation[0], currentTranslation[1], parseFloat(e.currentTarget.value)));
-                        activeBlockCasted.modelMatrix = newMatrix;
-                        props.updateBlocks();
-                    } } />
-            </div>
-            </div>
+                <GenerateMeshInspector
+                    //@ts-ignore
+                    activeBlockCasted={activeBlockCasted}
+                    updateBlocks={props.updateBlocks} />
             );
         }
     }
@@ -973,13 +1018,6 @@ function InspectorControls(props: any) {
                     type="checkbox"
                     checked={ props.grid.show }
                     onChange={ (e: React.FormEvent<HTMLInputElement>) => props.setGridShow(e) } />
-            </div>
-            <div className="ad-Controls-container">
-                <Control
-                    type="button"
-                    action="reset"
-                    value="Reset path"
-                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
             </div>
                     
             <h3 className="ad-Controls-title">
@@ -1023,18 +1061,150 @@ function InspectorControls(props: any) {
                     value={ activeBlock.gridPosition[1] }
                     onChange={ (e: any) => props.setPointYPosition(e) } />
             </div>
+
+            <h2 className="ad-Controls-title">
+                Add Block
+            </h2>
+
+            <div className="ad-Controls-container">
+                <Control
+                    type="button"
+                    action="reset"
+                    value="ADD"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="SUB"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="MUL"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="DIV"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="TIME"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="SIN"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="COS"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="TAN"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="COT"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="POW"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="SQRT"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+            </div>
+            <div className="ad-Controls-container">
+                <Control
+                    type="button"
+                    action="reset"
+                    value="ADD"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="SUB"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="MUL"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="DIV"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="TIME"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="TRIG"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="CUBE"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="asd"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="assd"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+            </div>
             
             {(
                 <div className="ad-Controls-container">
                     <Control
                         type="button"
                         action="delete"
-                        value="Remove"
+                        value="Remove selected"
                         onClick={ (e: any) => props.removeActiveBlock(e) } />
                 </div>
             )}
         </div>
     )
+}
+
+function RangeControl(props: any) {
+    const {
+        name,
+        inputValue,
+        min,
+        max,
+        onChange,
+        step,
+        ..._props
+    } = props
+    
+    return(
+        <Control
+            name={name}
+            type="range"
+            min={min }
+            max={ max }
+            step={ step }
+            value={ inputValue }
+            onChange={(e: any) => onChange(e)} />
+    );
 }
 
 function Control(props: any) {
@@ -1101,7 +1271,7 @@ function Choices(props: any) {
     )
 }
 
-function Button(props: any) {    
+function Button(props: any) {
     return (
         <button
             className={
@@ -1115,7 +1285,7 @@ function Button(props: any) {
     )
 }
 
-function Checkbox(props: any) {    
+function Checkbox(props: any) {
     return (
         <label className="ad-Checkbox">
             <input
