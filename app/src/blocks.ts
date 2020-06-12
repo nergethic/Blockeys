@@ -178,7 +178,7 @@ export namespace Blocks {
                 new Socket<number>("number2", 0.0)
             ]);
             let outputs = new SocketGroup([
-                new Socket<string>("result", "d")
+                new Socket<number>("result", 0.0)
             ]);
             super(BlockType.MathAddition, inputs, outputs);
         }

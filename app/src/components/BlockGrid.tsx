@@ -8,13 +8,18 @@ import { vec2, vec3, mat4 } from 'gl-matrix';
 import * as Utility from '../utility'
 
 let panelWidth = Config.CanvasWidth + 2;
+let gridWidth = window.innerWidth - panelWidth;
+let blockWidth = 175;
+let blockHeight = 88;
 
 class GridBlockContainer {
+    name: string;
     gridPosition: vec2;
     block: Blocks.BasicBlock;
     type: Blocks.BlockType;
 
-    constructor(block: Blocks.BasicBlock, gridPosition: vec2) {
+    constructor(name: string, block: Blocks.BasicBlock, gridPosition: vec2) {
+        this.name = name;
         this.block = block;
         this.type = block.blockType;
         this.gridPosition = gridPosition;
@@ -38,7 +43,7 @@ type ContainerState = {
     h: number,
     grid: GridOptions,
     ctrl: boolean,
-    blocks: GridBlockContainer[],
+    blockContainers: GridBlockContainer[],
     activeBlockIndex: number,
     blockKey: string,
     draggedPoint: boolean,
@@ -55,7 +60,7 @@ export function GenerateSomeBlocks() {
 }
 
 export class Container extends React.Component {
-    gridBlocks: GridBlockContainer[] = new Array();
+    gridBlockContainers: GridBlockContainer[] = new Array();
 
     state: ContainerState = {
         w: window.innerWidth-panelWidth,
@@ -66,7 +71,7 @@ export class Container extends React.Component {
             size: 22
         },
         ctrl: false,
-        blocks: this.gridBlocks,
+        blockContainers: this.gridBlockContainers,
         activeBlockIndex: 0,
         blockKey: "0",
         draggedPoint: false,
@@ -81,6 +86,8 @@ export class Container extends React.Component {
     };
 
     handleWindowSize(e: any) {
+        panelWidth = Config.CanvasWidth + 2;
+        gridWidth = window.innerWidth - panelWidth;
         this.reset(e);
     }
     
@@ -89,21 +96,23 @@ export class Container extends React.Component {
         document.addEventListener("keyup", this.handleKeyUp, false)
         window.addEventListener("resize", this.handleWindowSize);
 
-        let additionBlock = Main.CreateBlock(Blocks.BlockType.MathAddition, false);
-            let displayInputBlock = Main.CreateBlock(Blocks.BlockType.DisplayInput, false);
-    
-            additionBlock.ConnectSocket(additionBlock.outputs.sockets[0], displayInputBlock.inputs.sockets[0]);
-            additionBlock.SetInputData(0, 1.0);
-            additionBlock.SetInputData(1, 5.0);
-    
-            additionBlock.Update();
-    
-            let additionBlockGridContainer = new GridBlockContainer(additionBlock, Utility.MakeVec2(100, 300));
-            let displayInputBlockGridContainer = new GridBlockContainer(displayInputBlock, Utility.MakeVec2(500, 300));
-            this.gridBlocks.push(additionBlockGridContainer);
-            this.gridBlocks.push(displayInputBlockGridContainer);
+        //let additionBlock = Main.CreateBlock(Blocks.BlockType.MathAddition, false);
+        let displayInputBlock = Main.CreateBlock(Blocks.BlockType.DisplayInput, false);
+
+        //additionBlock.ConnectSocket(additionBlock.outputs.sockets[0], displayInputBlock.inputs.sockets[0]);
+        //additionBlock.SetInputData(0, 1.0);
+        //additionBlock.SetInputData(1, 5.0);
+
+        //additionBlock.Update();
+
+        //let additionBlockGridContainer = new GridBlockContainer(additionBlock, Utility.MakeVec2(100, 300));
+        let displayInputBlockGridContainer = new GridBlockContainer("DISPLAY", displayInputBlock, Utility.MakeVec2(500, 300));
+        //this.gridBlocks.push(additionBlockGridContainer);
+        this.gridBlockContainers.push(displayInputBlockGridContainer);
+
 
         genBlocks = () => {
+            /*
             let timeBlock = Main.CreateBlock(Blocks.BlockType.Time, true);
             let sinBlock = Main.CreateBlock(Blocks.BlockType.MathSin, false);
             let sinBlock2 = Main.CreateBlock(Blocks.BlockType.MathSin, false);
@@ -113,18 +122,19 @@ export class Container extends React.Component {
             let timeBlockGridContainer = new GridBlockContainer(timeBlock, Utility.MakeVec2(100, 700));
             let sinBlockGridContainer = new GridBlockContainer(sinBlock, Utility.MakeVec2(500, 700));
             let sinBlock2GridContainer = new GridBlockContainer(sinBlock2, Utility.MakeVec2(700, 800));
-            this.gridBlocks.push(sinBlock2GridContainer);
+            this.gridBlockContainers.push(sinBlock2GridContainer);
     
-            this.gridBlocks.push(timeBlockGridContainer);
-            this.gridBlocks.push(sinBlockGridContainer);
+            this.gridBlockContainers.push(timeBlockGridContainer);
+            this.gridBlockContainer.push(sinBlockGridContainer);
     
             let meshBlock = Main.CreateBlock(Blocks.BlockType.GenerateMesh, true);
             let meshBlockBlockGridContainer = new GridBlockContainer(meshBlock, Utility.MakeVec2(0, 900));
-            this.gridBlocks.push(meshBlockBlockGridContainer);
+            this.gridBlockContainers.push(meshBlockBlockGridContainer);
 
             //let asdads = Main.CreateBlock(Blocks.BlockType.GenerateMesh, true);
             //let meshBlockBlockGridContainer2 = new GridBlockContainer(meshBlock2, Utility.MakeVec2(0, 200));
-            //this.gridBlocks.push(meshBlockBlockGridContainer2);
+            //this.gridBlockContainers.push(meshBlockBlockGridContainer2);
+            */
         }
     }
     
@@ -202,13 +212,13 @@ export class Container extends React.Component {
     };
     
     setBlockType = (e: any) => {
-        const blocks = this.state.blocks;
+        const blockContainers = this.state.blockContainers;
         const activeBlockIndex = this.state.activeBlockIndex;
-        const activeBlock: GridBlockContainer = blocks[activeBlockIndex];
+        const activeBlock: GridBlockContainer = blockContainers[activeBlockIndex];
     };
     
     setPointXPosition = (e: React.FormEvent<HTMLSelectElement>) => {
-        let activeBlockCoords: vec2 = this.state.blocks[this.state.activeBlockIndex].gridPosition;
+        let activeBlockCoords: vec2 = this.state.blockContainers[this.state.activeBlockIndex].gridPosition;
         let value = this.positiveNumber(e.currentTarget.value)
         if (value > this.state.w) {
             value = this.state.w
@@ -219,7 +229,7 @@ export class Container extends React.Component {
     };
 
     setPointYPosition = (e: React.FormEvent<HTMLSelectElement>) => {
-        let activeBlockCoords: vec2 = this.state.blocks[this.state.activeBlockIndex].gridPosition;
+        let activeBlockCoords: vec2 = this.state.blockContainers[this.state.activeBlockIndex].gridPosition;
         let value = this.positiveNumber(e.currentTarget.value)
         if (value > this.state.h) {
             value = this.state.h
@@ -231,16 +241,16 @@ export class Container extends React.Component {
     };
 
     updateBlocks() {
-        const blocks = this.state.blocks;
-        this.setState({ blocks })
+        const blockContainers = this.state.blockContainers;
+        this.setState({ blockContainers })
     }
     
     setPointCoords = (coords: vec2) => {
-        const blocks = this.state.blocks
-        const activeBlock: GridBlockContainer = blocks[this.state.activeBlockIndex]
+        const blockContainers = this.state.blockContainers
+        const activeBlock: GridBlockContainer = blockContainers[this.state.activeBlockIndex]
         activeBlock.gridPosition = coords
 
-        this.setState({ blocks })
+        this.setState({ blockContainers })
     };
     
     setDraggedPoint = (index: number) => {
@@ -260,37 +270,37 @@ export class Container extends React.Component {
         })
     };
     
-    addBlockToGrid = (e: any) => {
-        if (this.state.ctrl) {
-            let coords = this.getMouseCoords(e)
-            let blocks = this.state.blocks
-
+    addBlockToGrid = (blockContainer: GridBlockContainer) => {
+        //if (this.state.ctrl) {
+            //let coords = this.getMouseCoords(e)
+            let blockContainers = this.state.blockContainers;
+            blockContainers.push(blockContainer);
             //let newBlock = new Blocks.GenerateCubeMeshBlock();
-            let newBlock = new Blocks.MathAdditionBlock();
-            let newBlockData = new GridBlockContainer(newBlock, coords);
-            blocks.push(newBlockData)
+            //let newBlock = new Blocks.MathAdditionBlock();
+            //let newBlockData = new GridBlockContainer("ADD", newBlock, coords);
+            
 
             this.setState({
-                blocks,
-                activeBlockIndex: blocks.length - 1
+                blockContainers,
+                activeBlockIndex: blockContainers.length - 1
             })
-        }
+        //}
     };
     
     removeActiveBlock = (e: any) => {
-        let blocks = this.state.blocks
+        let blockContainers = this.state.blockContainers
         let active = this.state.activeBlockIndex
 
-        if (blocks.length == 1) {
+        if (blockContainers.length == 1) {
             alert("HANDLE EMPTY GRID FIRST!"); // TODO
             return;
         }
         
-        blocks.splice(active, 1)
+        blockContainers.splice(active, 1)
 
         this.setState({
-            blocks,
-            activeBlockIndex: blocks.length - 1
+            blockContainers,
+            activeBlockIndex: blockContainers.length - 1
         })
     };
     
@@ -311,7 +321,7 @@ export class Container extends React.Component {
     };
     
     generatePath() {
-        let { blocks, closePath } = this.state
+        let { blockContainers, closePath } = this.state
         let d = ""
         
         if (closePath) d += "Z"
@@ -358,6 +368,7 @@ export class Container extends React.Component {
                         setPointYPosition={ this.setPointYPosition }
                         updateBlocks={this.updateBlocks}
                         setBlockType={ this.setBlockType }
+                        addBlockToGrid={ this.addBlockToGrid }
                         //setWidth={ this.setWidth }
                         //setHeight={ this.setHeight }
                         setGridSize={ this.setGridSize }
@@ -396,7 +407,7 @@ type SVGProps = {
     w : number,
     h: number,
     grid: GridOptions
-    blocks: GridBlockContainer[],
+    blockContainers: GridBlockContainer[],
     activeBlockIndex: number,
     addBlockToGrid: any,
     handleMouseMove: any,
@@ -412,7 +423,7 @@ class SVG extends React.Component {
             w,
             h,
             grid,
-            blocks,
+            blockContainers,
             activeBlockIndex,
             addBlockToGrid,
             handleMouseMove,
@@ -420,11 +431,16 @@ class SVG extends React.Component {
             reset
         }: SVGProps = this.props as SVGProps
 
-        let SVGblocks = blocks.map((block: GridBlockContainer, i: any, a: any) => {
+        let SVGblocks = blockContainers.map((block: GridBlockContainer, i: any, a: any) => {
             let pos = block.gridPosition; // todo
             let anchors = []
 
             let table: JSX.Element[] = new Array();
+
+            if (block.block == null) {
+                console.log("[SVG]: SVGblocks error!")
+                return;
+            }
 
             // generate inputs
             for (let i = 0; i < block.block.inputs.sockets.length; i++) {
@@ -439,7 +455,7 @@ class SVG extends React.Component {
             // generate outputs TODO this is ugly and ineficcient
             for (let i = 0; i < block.block.outputs.sockets.length; i++) {
                 table.push(<RectSocket 
-                    x={ pos[0] + 205 } // TODO: 300 to block length
+                    x={ pos[0] + 160 } // TODO: 300 to block length
                     y={ pos[1] + 20*i }
                 />);
 
@@ -447,7 +463,7 @@ class SVG extends React.Component {
                 for (let i = 0; i < block.block.outputs.sockets.length; i++) {
                     const mySocket = block.block.outputs.sockets[i];
                     if (mySocket.IsConnected()) {
-                        blocks.forEach((b: GridBlockContainer) => {
+                        blockContainers.forEach((b: GridBlockContainer) => {
                             // TODO? if (b == block) continue;
                             for (let socketIndex = 0; socketIndex < b.block.inputs.sockets.length; socketIndex++) { // TODO: cache this
                                 const socket = b.block.inputs.sockets[socketIndex];
@@ -481,6 +497,7 @@ class SVG extends React.Component {
                         y={ pos[1] }
                         reset={reset}
                         setDraggedPoint={ setDraggedPoint } />
+                    <text className="noselect" x={ pos[0]+30 } y={ pos[1]+55 } fill="white">{block.name}</text>
 
                     {table}
                 </g>
@@ -592,8 +609,8 @@ function Rect(props: any) {
             } }
             x={ props.x }
             y={ props.y }
-            width={ 175 }
-            height={ 88 }
+            width={ blockWidth }
+            height={ blockHeight }
             rx={ 0 }
             style={styles}
         />
@@ -889,16 +906,43 @@ class GenerateMeshInspector extends React.Component<any, any> {
 }
 
 function InspectorControls(props: any) {
-    if (props.activeBlockIndex < 0 || props.activeBlockIndex >= props.blocks.length) {
+    if (props.activeBlockIndex < 0 || props.activeBlockIndex >= props.blockContainers.length) {
         console.log("ERROR: invalid activeBlockIndex: " + props.activeBlockIndex);
         return;
     }
 
-    const activeBlock: GridBlockContainer = props.blocks[props.activeBlockIndex]
+    const activeBlock: GridBlockContainer = props.blockContainers[props.activeBlockIndex]
     const step = props.grid.snap ? props.grid.size : 1
 
     let styles = {
         height: ((window.innerHeight - Config.CanvasHeight) + 'px'),
+    };
+
+    let addNewBlock = (e: React.MouseEvent, name: string): void => {
+        let newBlock: Blocks.BasicBlock;
+        let newBlockGridContainer: GridBlockContainer;
+        let position = Utility.MakeVec2(gridWidth/2.0 - blockWidth/2.0, window.innerHeight/2 - blockHeight/2.0);
+
+        switch (name) {
+            case "ADD": {
+                newBlock = Main.CreateBlock(Blocks.BlockType.MathAddition, false);
+            } break;
+
+            case "SUB": {
+                newBlock = Main.CreateBlock(Blocks.BlockType.MathSubstraction, false);
+            } break;
+
+            case "MESH": {
+                newBlock = Main.CreateBlock(Blocks.BlockType.MeshRendering, false);
+            } break;
+
+            default: alert("[addNewBlock]: name not handled in switch")
+        }
+
+        newBlockGridContainer = new GridBlockContainer(name, newBlock, position);
+        props.addBlockToGrid(newBlockGridContainer);
+
+        props.reset(e)
     };
 
     let params: JSX.Element[] = new Array();
@@ -1039,9 +1083,10 @@ function InspectorControls(props: any) {
                         ]}
                         onChange={ (e: any) => props.setBlockType(e) } />
                 </div>
-                    )*/}
-
-            <div className="ad-Controls-container">
+                    )*/
+                    
+                    /*
+                    <div className="ad-Controls-container">
                 <Control
                     name="Point X position"
                     type="range"
@@ -1061,6 +1106,8 @@ function InspectorControls(props: any) {
                     value={ activeBlock.gridPosition[1] }
                     onChange={ (e: any) => props.setPointYPosition(e) } />
             </div>
+            */
+                    }
 
             <h2 className="ad-Controls-title">
                 Add Block
@@ -1071,7 +1118,7 @@ function InspectorControls(props: any) {
                     type="button"
                     action="reset"
                     value="ADD"
-                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                    onClick={ (e: React.MouseEvent) => addNewBlock(e, "ADD") } />
                 <Control
                     type="button"
                     action="reset"
