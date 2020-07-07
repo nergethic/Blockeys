@@ -11,7 +11,10 @@ export namespace Blocks {
         Basic,
         MathAddition,
         MathSubstraction,
+        MathDivide,
+        MathMultiply,
         MathSin,
+        GenerateCubeMesh,
         GenerateMesh,
         MeshRendering,
         DisplayInput,
@@ -213,6 +216,72 @@ export namespace Blocks {
         }
     }
 
+    export class MathSubstractionBlock extends BasicBlock {
+        constructor() {
+            let inputs  = new SocketGroup([
+                new Socket<number>("number1", 0.0),
+                new Socket<number>("number2", 0.0)
+            ]);
+            let outputs = new SocketGroup([
+                new Socket<number>("result", 0.0)
+            ]);
+            super(BlockType.MathSubstraction, inputs, outputs);
+        }
+
+        Update() {
+            let result = this.GetInputData<number>(0) - this.GetInputData<number>(1);
+            this.SetOutputData<number>(0, result);
+
+            super.Update();
+        }
+    }
+
+    export class MathMultiplyBlock extends BasicBlock {
+        constructor() {
+            let inputs  = new SocketGroup([
+                new Socket<number>("number1", 0.0),
+                new Socket<number>("number2", 0.0)
+            ]);
+            let outputs = new SocketGroup([
+                new Socket<number>("result", 0.0)
+            ]);
+            super(BlockType.MathMultiply, inputs, outputs);
+        }
+
+        Update() {
+            let result = this.GetInputData<number>(0) * this.GetInputData<number>(1);
+            this.SetOutputData<number>(0, result);
+
+            super.Update();
+        }
+    }
+
+    export class MathDivideBlock extends BasicBlock {
+        constructor() {
+            let inputs  = new SocketGroup([
+                new Socket<number>("number1", 0.0),
+                new Socket<number>("number2", 0.0)
+            ]);
+            let outputs = new SocketGroup([
+                new Socket<number>("result", 0.0)
+            ]);
+            super(BlockType.MathAddition, inputs, outputs);
+        }
+
+        Update() {
+            let number2 = this.GetInputData<number>(1);
+            let result = 0;
+            if (number2 == 0)
+                result = 0;
+            else
+                result = this.GetInputData<number>(0) / number2;
+                
+            this.SetOutputData<number>(0, result);
+
+            super.Update();
+        }
+    }
+
     export class MathSinBlock extends BasicBlock {
         constructor() {
             let input  = new SocketGroup([
@@ -285,6 +354,21 @@ export namespace Blocks {
         }
     }
 
+    export class GenerateMeshBlock extends BasicBlock {
+        constructor() {
+            let inputs  = new SocketGroup([
+                new Socket<boolean>("trigger", false),
+                new Socket<number>("red", 100),
+                new Socket<number>("green", 0),
+                new Socket<number>("blue", 25)
+            ]);
+            let outputs = new SocketGroup([
+                new Socket<Geometry.Mesh>("result", null)
+            ]);
+            super(BlockType.GenerateCubeMesh, inputs, outputs);
+        }
+    }
+
     export class GenerateCubeMeshBlock extends BasicBlock {
         mesh: Geometry.Mesh;
         vertices: Float32Array;
@@ -304,7 +388,7 @@ export namespace Blocks {
             let outputs = new SocketGroup([
                 new Socket<Geometry.Mesh>("result", null)
             ]);
-            super(BlockType.GenerateMesh, inputs, outputs);
+            super(BlockType.GenerateCubeMesh, inputs, outputs);
 
             this.vertices = new Float32Array([
                 // Front face

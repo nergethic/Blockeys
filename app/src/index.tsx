@@ -40,20 +40,32 @@ export function CreateBlock(type: Blocks.BlockType, updateInTick: boolean): Bloc
         newBlock = new Blocks.DisplayInputBlock()
     } break;
 
-    case Blocks.BlockType.GenerateMesh: {
+    case Blocks.BlockType.GenerateCubeMesh: {
       newBlock = new Blocks.GenerateCubeMeshBlock()
+    } break;
+
+    case Blocks.BlockType.GenerateMesh: {
+      newBlock = new Blocks.GenerateMeshBlock()
     } break;
 
     case Blocks.BlockType.MathAddition: {
       newBlock = new Blocks.MathAdditionBlock()
     } break;
 
-    case Blocks.BlockType.MathSin: {
-      newBlock = new Blocks.MathSinBlock()
+    case Blocks.BlockType.MathSubstraction: {
+      newBlock = new Blocks.MathSubstractionBlock()
     } break;
 
-    case Blocks.BlockType.MathSubstraction: {
-      //newBlock = new Blocks.math()
+    case Blocks.BlockType.MathDivide: {
+      newBlock = new Blocks.MathDivideBlock()
+    } break;
+
+    case Blocks.BlockType.MathMultiply: {
+      newBlock = new Blocks.MathMultiplyBlock()
+    } break;
+
+    case Blocks.BlockType.MathSin: {
+      newBlock = new Blocks.MathSinBlock()
     } break;
 
     case Blocks.BlockType.Time: {

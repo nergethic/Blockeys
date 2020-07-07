@@ -240,6 +240,9 @@ export class Container extends React.Component<any, ContainerState> {
     };
     
     setPointXPosition = (e: React.FormEvent<HTMLSelectElement>) => {
+        if (this.state.activeBlockIndex < 0)
+            return;
+
         let activeBlockCoords: vec2 = this.state.blockContainers[this.state.activeBlockIndex].gridPosition;
         let value = this.positiveNumber(e.currentTarget.value)
         if (value > this.state.w) {
@@ -251,6 +254,9 @@ export class Container extends React.Component<any, ContainerState> {
     };
 
     setPointYPosition = (e: React.FormEvent<HTMLSelectElement>) => {
+        if (this.state.activeBlockIndex < 0)
+            return;
+
         let activeBlockCoords: vec2 = this.state.blockContainers[this.state.activeBlockIndex].gridPosition;
         let value = this.positiveNumber(e.currentTarget.value)
         if (value > this.state.h) {
@@ -268,6 +274,9 @@ export class Container extends React.Component<any, ContainerState> {
     }
     
     setPointCoords = (coords: vec2) => {
+        if (this.state.activeBlockIndex < 0)
+            return;
+
         const blockContainers = this.state.blockContainers
         const activeBlock: GridBlockContainer = blockContainers[this.state.activeBlockIndex]
         activeBlock.gridPosition = coords
@@ -276,6 +285,9 @@ export class Container extends React.Component<any, ContainerState> {
     };
     
     setDraggedPoint = (index: number) => {
+        if (this.state.activeBlockIndex < 0)
+            return;
+
         if ( ! this.state.ctrl) {
             this.setState({
                 activeBlockIndex: index,
@@ -313,10 +325,10 @@ export class Container extends React.Component<any, ContainerState> {
         let blockContainers = this.state.blockContainers
         let active = this.state.activeBlockIndex
 
-        if (blockContainers.length == 1) {
-            alert("HANDLE EMPTY GRID FIRST!"); // TODO
-            return;
-        }
+        //if (blockContainers.length == 1) {
+            //alert("HANDLE EMPTY GRID FIRST!"); // TODO
+            //return;
+        //}
         
         blockContainers.splice(active, 1)
 
@@ -940,20 +952,7 @@ class GenerateMeshInspector extends React.Component<any, any> {
     }
 }
 
-function InspectorControls(props: any) {
-    if (props.activeBlockIndex < 0 || props.activeBlockIndex >= props.blockContainers.length) {
-        alert("ERROR: invalid activeBlockIndex: " + props.activeBlockIndex)
-        console.log("ERROR: invalid activeBlockIndex: " + props.activeBlockIndex);
-        return;
-    }
-
-    const activeBlock: GridBlockContainer = props.blockContainers[props.activeBlockIndex]
-    const step = props.grid.snap ? props.grid.size : 1
-
-    let styles = {
-        height: ((props.h - Config.CanvasHeight) + 'px'),
-    };
-
+function AddBlockButtons(props: any) {
     let addNewBlock = (e: React.MouseEvent, name: string): void => {
         let newBlock: Blocks.BasicBlock;
         let newBlockGridContainer: GridBlockContainer;
@@ -968,8 +967,16 @@ function InspectorControls(props: any) {
                 newBlock = Main.CreateBlock(Blocks.BlockType.MathSubstraction, false);
             } break;
 
-            case "MESH": {
-                newBlock = Main.CreateBlock(Blocks.BlockType.GenerateMesh, true);
+            case "MUL": {
+                newBlock = Main.CreateBlock(Blocks.BlockType.MathMultiply, false);
+            } break;
+
+            case "DIV": {
+                newBlock = Main.CreateBlock(Blocks.BlockType.MathDivide, false);
+            } break;
+
+            case "CUBE": {
+                newBlock = Main.CreateBlock(Blocks.BlockType.GenerateCubeMesh, true);
             } break;
 
             case "TIME": {
@@ -993,7 +1000,132 @@ function InspectorControls(props: any) {
         props.reset(e)
     };
 
+    return(
+        <div>
+    <h2 className="ad-Controls-title">
+                Add Block
+            </h2>
+
+            <div className="ad-Controls-container">
+                <Control
+                    type="button"
+                    action="reset"
+                    value="ADD"
+                    onClick={ (e: React.MouseEvent) => addNewBlock(e, "ADD") } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="SUB"
+                    onClick={ (e: React.MouseEvent) => addNewBlock(e, "SUB") } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="MUL"
+                    onClick={ (e: React.MouseEvent) => addNewBlock(e, "MUL") } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="DIV"
+                    onClick={ (e: React.MouseEvent) => addNewBlock(e, "DIV") } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="TIME"
+                    onClick={ (e: React.MouseEvent) => addNewBlock(e, "TIME") } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="SIN"
+                    onClick={ (e: React.MouseEvent) => addNewBlock(e, "SIN") } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="COS"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="TAN"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="COT"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="POW"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="SQRT"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+            </div>
+            <div className="ad-Controls-container">
+                <Control
+                    type="button"
+                    action="reset"
+                    value="CLAMP01"
+                    onClick={ (e: React.MouseEvent) => addNewBlock(e, "CLAMP01") } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="CUBE"
+                    onClick={ (e: React.MouseEvent) => addNewBlock(e, "CUBE") } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="LOOP"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="SAMPE"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="C#"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="SHADER"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="MAT"
+                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
+            </div>
+        </div>
+    )
+}
+
+function InspectorControls(props: any) {
+    if (props.activeBlockIndex >= props.blockContainers.length) {
+        alert("ERROR: invalid activeBlockIndex: " + props.activeBlockIndex)
+        console.log("ERROR: invalid activeBlockIndex: " + props.activeBlockIndex);
+        return;
+    }
+
+    let styles = {
+        height: ((props.h - Config.CanvasHeight) + 'px'),
+    };
+
+    if (props.activeBlockIndex < 0) {
+        return (
+            <div className="ad-Controls" style={styles}>
+                <AddBlockButtons {...props}/>
+            </div>
+        );
+    }
+
     let params: JSX.Element[] = new Array();
+    const activeBlock: GridBlockContainer = props.blockContainers[props.activeBlockIndex]
+    const step = props.grid.snap ? props.grid.size : 1
 
     switch (activeBlock.type) {
         case Blocks.BlockType.Basic: {
@@ -1047,7 +1179,10 @@ onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
         
         */
 
-        case Blocks.BlockType.MathAddition: {
+        case Blocks.BlockType.MathAddition:
+        case Blocks.BlockType.MathSubstraction:
+        case Blocks.BlockType.MathMultiply:
+        case Blocks.BlockType.MathDivide: {
             params.push(
                 <div className="ad-Controls-container">
                 <VolatileText
@@ -1060,7 +1195,7 @@ onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
                     block={activeBlock}
                     dataToDisplay={(): number => activeBlock.block.GetInputData(1)}
                      />
-                    <VolatileText
+                <VolatileText
                     name="OUTPUT"
                     block={activeBlock}
                     dataToDisplay={(): number => activeBlock.block.GetOutputData(0)}
@@ -1094,7 +1229,7 @@ onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
             );
         } break;
 
-        case Blocks.BlockType.GenerateMesh: {
+        case Blocks.BlockType.GenerateCubeMesh: {
             let activeBlockCasted = activeBlock.block as Blocks.GenerateCubeMeshBlock;
             params.push(
                 <GenerateMeshInspector
@@ -1105,7 +1240,7 @@ onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
             );
         } break;
 
-        default: alert("[InspectorControls]: invalid block type");
+        default: alert("[InspectorControls]: unhandled block type");
     }
         
     return (
@@ -1183,104 +1318,9 @@ onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
             */
                     }
 
-            <h2 className="ad-Controls-title">
-                Add Block
-            </h2>
-
-            <div className="ad-Controls-container">
-                <Control
-                    type="button"
-                    action="reset"
-                    value="ADD"
-                    onClick={ (e: React.MouseEvent) => addNewBlock(e, "ADD") } />
-                <Control
-                    type="button"
-                    action="reset"
-                    value="SUB"
-                    onClick={ (e: React.MouseEvent) => addNewBlock(e, "SUB") } />
-                <Control
-                    type="button"
-                    action="reset"
-                    value="MUL"
-                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
-                <Control
-                    type="button"
-                    action="reset"
-                    value="DIV"
-                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
-                <Control
-                    type="button"
-                    action="reset"
-                    value="TIME"
-                    onClick={ (e: React.MouseEvent) => addNewBlock(e, "TIME") } />
-                <Control
-                    type="button"
-                    action="reset"
-                    value="SIN"
-                    onClick={ (e: React.MouseEvent) => addNewBlock(e, "SIN") } />
-                <Control
-                    type="button"
-                    action="reset"
-                    value="COS"
-                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
-                <Control
-                    type="button"
-                    action="reset"
-                    value="TAN"
-                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
-                <Control
-                    type="button"
-                    action="reset"
-                    value="COT"
-                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
-                <Control
-                    type="button"
-                    action="reset"
-                    value="POW"
-                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
-                <Control
-                    type="button"
-                    action="reset"
-                    value="SQRT"
-                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
-            </div>
-            <div className="ad-Controls-container">
-                <Control
-                    type="button"
-                    action="reset"
-                    value="CLAMP01"
-                    onClick={ (e: React.MouseEvent) => addNewBlock(e, "CLAMP01") } />
-                <Control
-                    type="button"
-                    action="reset"
-                    value="MESH"
-                    onClick={ (e: React.MouseEvent) => addNewBlock(e, "MESH") } />
-                <Control
-                    type="button"
-                    action="reset"
-                    value="LOOP"
-                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
-                <Control
-                    type="button"
-                    action="reset"
-                    value="SAMPE"
-                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
-                <Control
-                    type="button"
-                    action="reset"
-                    value="C#"
-                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
-                <Control
-                    type="button"
-                    action="reset"
-                    value="SHADER"
-                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
-                <Control
-                    type="button"
-                    action="reset"
-                    value="MAT"
-                    onClick={ (e: React.MouseEvent) => props.reset(e) } />
-            </div>
+            <AddBlockButtons
+                {...props}
+                />
             
             {(
                 <div className="ad-Controls-container">
