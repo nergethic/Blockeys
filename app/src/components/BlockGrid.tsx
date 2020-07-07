@@ -582,7 +582,7 @@ class SVG extends React.Component<SVGProps, SVGState> {
                                                 x1={ pos[0] + 175 }
                                                 y1={ pos[1] + 20*i }
                                                 x2={ b.gridPosition[0]}
-                                                y2={ b.gridPosition[1]} />
+                                                y2={ b.gridPosition[1] + socketIndex*20} />
                                                 </g>);
                                     }
                                 }
