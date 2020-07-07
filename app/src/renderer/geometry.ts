@@ -369,8 +369,8 @@ export namespace Geometry {
 
             this.geometry = geometry;
             this.material = material;
-            this.attribLocations = new Array(geometry.attributes.length);
             this.material.SetActive();
+            this.attribLocations = new Array(geometry.attributes.length);
             for (let i = 0; i < this.geometry.attrubuteNames.length; i++) {
                 const attribName = this.geometry.attrubuteNames[i];
                 let location: number = gl.getAttribLocation(material.program, attribName);

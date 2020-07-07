@@ -59,6 +59,10 @@ export function CreateBlock(type: Blocks.BlockType, updateInTick: boolean): Bloc
     case Blocks.BlockType.Time: {
       newBlock = new Blocks.TimeBlock()
     } break;
+
+    case Blocks.BlockType.MathClamp: {
+      newBlock = new Blocks.MathClampBlock()
+    } break;
   }
   
   if (updateInTick) {
@@ -261,16 +265,7 @@ function InitAppState() {
   resolution[0] = Config.CanvasWidth;
   resolution[1] = Config.CanvasHeight;
   AppState.resolution = resolution;
-
   AppState.lightPosition = Utility.MakeVec3(0, 0.6, 2.5);
-
-  AppState.lightPositionUniform = new Geometry.Uniform<glm.vec3>("iLightPosition", Geometry.UniformType.Vector3, Utility.MakeVec3(0.0, 0.0, 0.0));
-  AppState.cameraPositionUniform = new Geometry.Uniform<glm.vec3>("iViewPosition", Geometry.UniformType.Vector3, AppState.cameraPosition);
-  AppState.viewUniform = new Geometry.Uniform<glm.mat4>("iView", Geometry.UniformType.Matrix4, AppState.viewMatrix);
-  AppState.projectionUniform = new Geometry.Uniform<glm.mat4>("iProjection", Geometry.UniformType.Matrix4, AppState.projectionMatrix);
-
-  AppState.timeUniform = new Geometry.Uniform<number>("iTime", Geometry.UniformType.Float, AppState.time);
-  AppState.resolutionUniform = new Geometry.Uniform<Float32Array>("iResolution", Geometry.UniformType.Vector2, resolution);
 }
 
 class Clock {

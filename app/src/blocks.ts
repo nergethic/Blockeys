@@ -2,6 +2,7 @@
 import {Geometry} from './renderer/geometry'
 import { AppState } from './appState';
 import * as glm from 'gl-matrix';
+import * as Utility from './utility';
 
 export namespace Blocks {
     type SocketType = Socket<number | string | boolean | Geometry.Mesh>;
@@ -14,10 +15,11 @@ export namespace Blocks {
         GenerateMesh,
         MeshRendering,
         DisplayInput,
-        Time
+        Time,
+        MathClamp
     } 
 
-    class Socket<SocketType> {
+    export class Socket<SocketType> {
         name: string;
         myBlock: BasicBlock;
         connectedSocket: Socket<SocketType>;
@@ -86,18 +88,38 @@ export namespace Blocks {
             }
         }
 
-        ConnectSocket<T>(mySocket: Socket<T>, otherSocket: Socket<T>): void {
-            if (mySocket.myBlock == null) {
+        ConnectSocket<T>(myOutputSocket: Socket<T>, otherInputSocket: Socket<T>): void {
+            if (myOutputSocket.myBlock == null) {
                 console.log("ERROR: mySocket wasn't initialized properly, 'myBlock' is null!")
             }
-            if (otherSocket.myBlock == null) {
+            if (otherInputSocket.myBlock == null) {
                 console.log("ERROR: otherSocket wasn't initialized properly, 'myBlock' is null!")
             }
+            //if (!this.outputs.sockets.includes(myOutputSocket)) {
+                //console.log("ERROR: myOutputSocket error")
+            //}
 
-            mySocket.connectedSocket = otherSocket;
-            otherSocket.connectedSocket = mySocket;
+            myOutputSocket.connectedSocket = otherInputSocket;
+            otherInputSocket.connectedSocket = myOutputSocket;
 
             this.TriggerOutputsUpdate();
+        }
+
+        DisconnectSocket<T>(mySocket: Socket<T>): void {
+            if (!mySocket.IsConnected) {
+                return;
+            }
+            if (mySocket.myBlock == null) {
+                console.log("ERROR: mySocket wasn't initialized properly, 'myBlock' is null!")
+                return;
+            }
+            if (mySocket.connectedSocket == null) {
+                console.log("ERROR: otherSocket wasn't initialized properly, 'myBlock' is null!")
+                return;
+            }
+
+            mySocket.connectedSocket.connectedSocket = null;
+            mySocket.connectedSocket = null;
         }
 
         SetAfterUpdateAction(action: () => {}) {
@@ -209,6 +231,30 @@ export namespace Blocks {
         }
     }
 
+    export class MathClampBlock extends BasicBlock {
+        constructor() {
+            let inputs  = new SocketGroup([
+                new Socket<number>("in", 0.0),
+            ]);
+            let outputs = new SocketGroup([
+                new Socket<number>("out", 0.0)
+            ]);
+            super(BlockType.MathClamp, inputs, outputs);
+        }
+
+        Update() {
+            let result = this.GetInputData<number>(0);
+            if (result < 0.0)
+                result = 0.0;
+            else if (result > 1.0)
+                result = 1.0;
+
+            this.SetOutputData<number>(0, result);
+
+            super.Update();
+        }
+    }
+
     export class DisplayInputBlock extends BasicBlock {
         constructor() {
             let inputs  = new SocketGroup([
@@ -250,7 +296,10 @@ export namespace Blocks {
 
         constructor() {
             let inputs  = new SocketGroup([
-                new Socket<boolean>("trigger", false)
+                new Socket<boolean>("trigger", false),
+                new Socket<number>("red", 100),
+                new Socket<number>("green", 0),
+                new Socket<number>("blue", 25)
             ]);
             let outputs = new SocketGroup([
                 new Socket<Geometry.Mesh>("result", null)
@@ -385,10 +434,17 @@ export namespace Blocks {
                 this.tint = new Float32Array([0.2, 0.5, 0.0]);
                 let tintColorUniform = new Geometry.Uniform<Float32Array>("iTintColor", Geometry.UniformType.Vector3, this.tint);
 
+                let lightPositionUniform = new Geometry.Uniform<glm.vec3>("iLightPosition", Geometry.UniformType.Vector3, Utility.MakeVec3(0.0, 0.0, 0.0));
+                let cameraPositionUniform = new Geometry.Uniform<glm.vec3>("iViewPosition", Geometry.UniformType.Vector3, AppState.cameraPosition);
+                let viewUniform = new Geometry.Uniform<glm.mat4>("iView", Geometry.UniformType.Matrix4, AppState.viewMatrix);
+                let projectionUniform = new Geometry.Uniform<glm.mat4>("iProjection", Geometry.UniformType.Matrix4, AppState.projectionMatrix);
+                let timeUniform = new Geometry.Uniform<number>("iTime", Geometry.UniformType.Float, AppState.time);
+                let resolutionUniform = new Geometry.Uniform<glm.vec2>("iResolution", Geometry.UniformType.Vector2, Utility.MakeVec2(AppState.resolution[0], AppState.resolution[1]));
+
                 let material = new Geometry.Material("vertex-normal", "fragment-normal", new Geometry.BufferUniform([
                     modelUniform, tintColorUniform,
-                    AppState.cameraPositionUniform, AppState.viewUniform, AppState.projectionUniform, AppState.lightPositionUniform,
-                    AppState.timeUniform, AppState.resolutionUniform,]));
+                    cameraPositionUniform, viewUniform, projectionUniform, lightPositionUniform,
+                    timeUniform, resolutionUniform,]));
 
                 this.mesh = new Geometry.Mesh(geometry, material);
 
@@ -402,6 +458,11 @@ export namespace Blocks {
 
                 // this.geometry = new Geometry.BufferGeometry();
             //}
+            this.tint[0] = this.GetInputData(1);
+            this.tint[1] = this.GetInputData(2);
+            this.tint[2] = this.GetInputData(3);
+
+            this.mesh.material.SetActive();
 
             this.mesh.material.SetUniform("iModel", this.modelMatrix)
             this.mesh.material.SetUniform("iTintColor", this.tint)
@@ -409,7 +470,8 @@ export namespace Blocks {
             this.mesh.material.SetUniform("iLightPosition", AppState.lightPosition)
             this.mesh.material.SetUniform("iViewPosition", AppState.cameraPosition)
             this.mesh.material.SetUniform("iView", AppState.viewMatrix)
-            this.mesh.material.SetUniform("iProjection", AppState.projectionMatrix)
+            this.mesh.material.SetUniform("iProjection", AppState.projectionMatrix) // location error
+
             this.mesh.material.SetUniform("iTime", AppState.time)
             this.mesh.material.SetUniform("iResolution", AppState.resolution)
 

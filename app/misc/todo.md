@@ -3,9 +3,7 @@
 [X] generate cube
 [X] lambert
 [X] output block (console log)
-[almost ;)] cleanup and fix @ts-ignore
 [] generate plane, sphere 
-[] multiple lights?
 [] shader reloading
 [] textures
 [] post processes
@@ -17,18 +15,12 @@
   [] geometry
   [] mesh
   [] transform
-  [] time
+  [X] time
   [] custom vertex and fragment
   [] generate geometry at points
 
 - editor
-    [] adding nodes
-    [X,] changing parameters
-    [] connectiong nodes
-
-
-daily:
-[] get rid of @ts-ignore
-[] move block creation logic to index
-[] update time UI
-[] fix react console errors
+    [] update block button
+    [X] adding blocks
+    [X] connectiong blocks
+    [X] changing parameters
