@@ -19,7 +19,8 @@ export namespace Blocks {
         MeshRendering,
         DisplayInput,
         Time,
-        MathClamp
+        MathClamp,
+        OutputNumber
     } 
 
     export class Socket<SocketType> {
@@ -335,6 +336,25 @@ export namespace Blocks {
         Update() {
             let result = this.GetInputData<number>(0);
             console.log(result)
+
+            super.Update();
+        }
+    }
+
+    export class OutputNumberBlock extends BasicBlock {
+        constructor() {
+            let input  = new SocketGroup([
+                new Socket<number>("input", 0.0),
+            ]);
+            let output  = new SocketGroup([
+                new Socket<number>("output", 0.0),
+            ]);
+            super(BlockType.OutputNumber, new SocketGroup(), output);
+        }
+
+        Update() {
+            this.SetOutputData<number>(0, this.GetInputData<number>(0)) 
+            let result = this.GetOutputData<number>(0);
 
             super.Update();
         }

@@ -991,6 +991,10 @@ function AddBlockButtons(props: any) {
                 newBlock = Main.CreateBlock(Blocks.BlockType.MathClamp, false);
             } break;
 
+            case "OUTPUT": {
+                newBlock = Main.CreateBlock(Blocks.BlockType.OutputNumber, false);
+            } break;
+
             default: alert("[addNewBlock]: name not handled in switch")
         }
 
@@ -1099,6 +1103,11 @@ function AddBlockButtons(props: any) {
                     action="reset"
                     value="MAT"
                     onClick={ (e: React.MouseEvent) => props.reset(e) } />
+                <Control
+                    type="button"
+                    action="reset"
+                    value="OUTPUT"
+                    onClick={ (e: React.MouseEvent) => addNewBlock(e, "OUTPUT") } />
             </div>
         </div>
     )
@@ -1225,6 +1234,27 @@ onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
                     name="OUT"
                     block={activeBlock}
                     dataToDisplay={(): number => activeBlock.block.GetOutputData(0)} />
+                </div>
+            );
+        } break;
+
+        case Blocks.BlockType.OutputNumber: {
+            params.push(
+                <div>
+                    <Control
+                        name="Out"
+                        type="text"
+                        value={props.color.blue}
+                        onChange={ (e: React.FormEvent<HTMLSelectElement>) => {
+                            props.color.blue = e.currentTarget.value;
+                            let value = e.currentTarget.value;
+                            let numberValue = parseInt(value);
+                            if (!isNaN(numberValue)) {
+                                activeBlock.block.SetInputData(0, numberValue);
+                                activeBlock.block.Update();
+                            }
+                        } }
+                    />
                 </div>
             );
         } break;

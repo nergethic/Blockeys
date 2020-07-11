@@ -75,6 +75,10 @@ export function CreateBlock(type: Blocks.BlockType, updateInTick: boolean): Bloc
     case Blocks.BlockType.MathClamp: {
       newBlock = new Blocks.MathClampBlock()
     } break;
+
+    case Blocks.BlockType.OutputNumber: {
+      newBlock = new Blocks.OutputNumberBlock()
+    } break;
   }
   
   if (updateInTick) {
