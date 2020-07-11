@@ -1,0 +1,27 @@
+{
+    "compilerOptions": {
+        "sourceMap": true,
+        // "strictNullChecks": true,
+        "noImplicitAny": true,
+        "module": "commonjs",
+        "target": "es6",
+        "removeComments": true,
+        "jsx": "react",
+        "allowJs": true,
+        "baseUrl": "./",
+        "types": [
+            "webgl2",
+            "react",
+            "react-dom",
+            "gl-matrix"
+        ]
+        },
+        "paths": {
+            "components/": [
+                "src/components/"
+            ],
+        },
+    "include": [
+        "src/**/*"
+    ],
+}

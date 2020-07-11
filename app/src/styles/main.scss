@@ -1,0 +1,517 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+html {
+  font-size: 16px;
+  font-family: "Open Sans", sans-serif;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  color: white;
+  background: #353D54;
+
+  //margin: 0 auto;
+
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.drag-container {
+  text-align: center;
+}
+
+.head {
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+  background-color: #CCCCCC;
+  width:100%;
+}
+
+.droppable {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  right: 0;
+  top: 10;
+  background-color: #9E9E9E;
+  border-left: 2px dotted red;
+}
+
+.draggable {
+  width: 100px;
+  height: 100px;
+  background-color: yellow;
+  margin: 10px auto;
+}
+
+.inProgress {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  left: 0;
+  top: 10;
+  background-color: #EEEEEE;
+  border-right: 2px dotted red;
+}
+
+@mixin noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+     -khtml-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
+  }
+
+.noselect  {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+     -khtml-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
+}
+
+//
+@import url(https://fonts.googleapis.com/css?family=Open+Sans:400,600);
+
+:root {
+    --ad-Color-prim: #111;
+    --ad-Color-sec: rgb(18, 131, 252); //#00E676;
+    --ad-Color-del: #E53935;
+    --ad-Color-bg: rgb(43, 43, 43);
+}
+
+#webgl-canvas-container {
+  margin: 0;
+  padding: 0;
+}
+
+.ad-App {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* main layout */
+.ad-Container {
+    width: 100%;
+    display: flex;
+    background: #fff;
+}
+    .ad-Container-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+        .ad-Container-svg {
+            height: 100%;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f3f3f3;
+        }
+    
+    .ad-Container-controls {
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        // height: 100%; todo
+        width: 100%;
+        background: var(--ad-Color-prim);
+    }
+    .ad-Container-controls ::-webkit-scrollbar {
+        width: 6px;
+    }
+    .ad-Container-controls ::-webkit-scrollbar-thumb {
+        border-radius: 30px;
+        background: rgba(255, 255, 255, .3);
+    }
+
+.ad-Foot {
+    padding: 1.5rem 2rem;
+    display: flex;
+    //flex-direction: row;
+    background: #fff;
+    border-top: 2px solid #eee;
+}
+    .ad-Foot-list {
+        flex: 1;
+    }
+        .ad-Foot-item {
+            text-transform: uppercase;
+            font-size: .7rem;
+            color: var(--ad-Color-prim);
+        }
+        .ad-Foot-item + .ad-Foot-item {
+            margin-top: .5rem;
+        }
+            .ad-Foot-highlight {
+                padding-bottom: .04rem;
+                border-bottom: 2px solid var(--ad-Color-sec);
+                font-weight: bold;
+            }
+    
+    .ad-Foot-meta {
+        margin-left: 2rem;
+        text-align: right;
+        line-height: 1.4;
+        font-size: .7rem;
+        color: var(--ad-Color-prim);
+    }
+        .ad-Foot-meta a {
+            text-decoration: underline;
+            color: var(--ad-Color-prim);
+        }
+
+
+.ad-SVG {
+    display: block;
+    background: #fff;
+    border-radius: 4px;
+}
+    .ad-Grid {
+        fill: none;
+        stroke: #eee;
+        stroke-width: 1px;
+    }
+    .ad-Grid.is-hidden {
+        opacity: 0;
+    }
+    .ad-Path {
+        fill: none;
+        stroke: #555;
+        stroke-width: 4px;
+        stroke-linecap: round;
+    }
+    .ad-Point {
+        cursor: pointer;
+        fill: #fff;
+        stroke: #555;
+        stroke-width: 5px;
+        transition: fill .2s;
+    }
+    .ad-Point:hover,
+    .ad-PointGroup.is-active .ad-Point {
+        fill: var(--ad-Color-sec);
+    }
+    .ad-PointGroup--first .ad-Point {
+        stroke: var(--ad-Color-sec);
+    }
+    .ad-Anchor {
+        opacity: .5;
+    }
+    .ad-PointGroup.is-active .ad-Anchor {
+        opacity: 1;
+    }
+        .ad-Anchor-point {
+            cursor: pointer;
+            fill: #fff;
+            stroke: #888;
+            stroke-width: 5px;
+        }
+        .ad-Anchor-line {
+            stroke: #888;
+            stroke-width: 1px;
+            stroke-dasharray: 5 5;
+        }
+
+  /* controls on the right */
+  .ad-Controls {
+    @include noselect;
+    margin-left: 2.8rem;
+    margin-top: 2rem;
+    padding-right: 2.5rem;
+    overflow-y: scroll;
+  }
+
+  .ad-Controls > :last-child {
+    margin-bottom: 6em;
+  }
+
+    .ad-Controls :first-child {
+        margin-top: 0;
+    }
+    .ad-Controls-title {
+        margin: 3rem 0 1.5rem;
+        font-size: .9rem;
+        color: #fff;
+    }
+        .ad-Controls-container {
+            display: flex;
+        }
+        .ad-Controls-container + .ad-Controls-container {
+            margin-top: 1.5rem;
+        }
+
+.ad-Control {
+    flex: 1;
+    margin-bottom: .4rem;
+}
+    .ad-Control-label {
+        @include noselect;
+        display: block;
+        margin-bottom: .6rem;
+        text-transform: uppercase;
+        font-size: .68rem;
+        color: var(--ad-Color-label);
+    }
+
+
+/* control elements */
+.ad-Button {
+    padding: .8rem 1.4rem;
+    background: var(--ad-Color-sec);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background .2s;
+    text-transform: uppercase;
+    font-family: "Open Sans", sans-serif;
+    font-weight: bold;
+    font-size: .6rem;
+    letter-spacing: .08rem;
+    color: #fff;
+}
+.ad-Button:focus,
+.ad-Button:hover {
+    outline: 0;
+    background: var(--ad-Color-bg);
+}
+.ad-Button--delete {
+    background: var(--ad-Color-del);
+}
+.ad-Button--delete:focus,
+.ad-Button--delete:hover {
+    background: var(--ad-Color-del);
+}
+.ad-Button--reset {
+    background: var(--ad-Color-bg);
+}
+.ad-Button--reset:focus,
+.ad-Button--reset:hover {
+    background: var(--ad-Color-sec);
+}
+
+.ad-Text {
+    padding: 0.5em;
+    height: 18px;
+    width: 2rem;
+    background: var(--ad-Color-bg);
+    border: none;
+    border-radius: 4px;
+    text-align: center;
+    font-family: "Open Sans", sans-serif;
+    font-size: .8rem;
+    color: #fff;
+}
+.ad-Text:focus {
+    outline: 0;
+    background: var(--ad-Color-bg);
+}
+
+.ad-Checkbox-input {
+    display: none;
+}
+.ad-Checkbox-fake {
+    margin-top: 15px;
+    position: relative;
+    height: 18px;
+    width: 2.7rem;
+    background: var(--ad-Color-bg);
+    border-radius: 30px;
+}
+.ad-Checkbox-fake::after {
+    content: "";
+    box-sizing: border-box;
+    display: block;
+    position: absolute;
+    top: -0px;
+    left: 0;
+    height: 18px;
+    width: 18px;
+    cursor: pointer;
+    border: 4px solid #fff;
+    background: var(--ad-Color-prim);
+    border-radius: 50%;
+}
+.ad-Checkbox-input:checked + .ad-Checkbox-fake::after {
+    left: auto;
+    right: 0;
+    border-color: var(--ad-Color-sec);
+}
+
+.ad-Choices {
+    display: flex;
+    width: 12rem;
+}
+    .ad-Choice {
+        flex: 1;
+    }
+        .ad-Choice-input {
+            display: none;
+        }
+        .ad-Choice-fake {
+            padding: .6rem;
+            background: var(--ad-Color-bg);
+            border: 4px solid transparent;
+            transition: border .2s;
+            cursor: pointer;
+            text-align: center;
+            text-transform: uppercase;
+            font-family: "Open Sans", sans-serif;
+            font-size: .8rem;
+            font-weight: bold;
+            color: #fff;
+        }
+        .ad-Choice:first-child .ad-Choice-fake {
+            border-radius: 4px 0 0 4px;
+        }
+        .ad-Choice:last-child .ad-Choice-fake {
+            border-radius: 0 4px 4px 0;
+        }
+        .ad-Choice-input:checked + .ad-Choice-fake {
+            border-color: var(--ad-Color-sec);
+            background: var(--ad-Color-prim);
+        }
+
+.ad-Range {
+    display: flex;
+    align-items: center;
+}
+    .ad-Range-text {
+        margin-left: .5rem;
+    }
+    .ad-Range-input {
+        width: 100%;
+        height: 14px;
+        appearance: none;
+        border-radius: 30px;
+        background: var(--ad-Color-bg);
+    }
+    .ad-Range-input:focus {
+        outline: 0;
+        background: var(--ad-Color-bg);
+    }
+    /* thumb */
+    .ad-Range-input::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        border: 4px solid #fff;
+        background: var(--ad-Color-bg);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: border .2s;
+    }
+    .ad-Range-input::-moz-range-thumb {
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        border: 4px solid #fff;
+        background: var(--ad-Color-bg);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: border .2s;
+    }
+
+    .ad-Range-input:hover::-webkit-slider-thumb,
+    .ad-Range-input:focus::-webkit-slider-thumb {
+        border-color: var(--ad-Color-sec);
+    }
+    .ad-Range-input:hover::-moz-range-thumb,
+    .ad-Range-input:focus::-moz-range-thumb {
+        border-color: var(--ad-Color-sec);
+    }
+
+    input[type=range] {
+      -webkit-appearance: none; /* Hides the slider so that custom slider can be made */
+      width: 100%; /* Specific width is required for Firefox. */
+      background: transparent; /* Otherwise white in Chrome */
+    }
+    
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        border: 4px solid #fff;
+        background: var(--ad-Color-bg);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: border .2s;
+    }
+    
+    input[type=range]:focus {
+      outline: none; /* Removes the blue border. You should probably do some kind of focus styling for accessibility reasons though. */
+    }
+    
+    input[type=range]::-ms-track {
+      width: 100%;
+      cursor: pointer;
+    
+      /* Hides the slider so custom styles can be added */
+      background: transparent; 
+      border-color: transparent;
+      color: transparent;
+
+      background: red;
+      border-color: var(--ad-Color-sec);
+    }
+
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      cursor: pointer;
+      background: var(--ad-Color-bg);
+      border-radius: 1.3px;
+      border: 0.2px solid #010101;
+    }
+    
+    input[type=range]:focus::-webkit-slider-runnable-track {
+      background: var(--ad-Color-bg);
+    }
+    
+    input[type=range]::-moz-range-track {
+      width: 100%;
+      height: 8.4px;
+      cursor: pointer;
+      background: var(--ad-Color-bg);
+      border-radius: 1.3px;
+      border: 0.2px solid #010101;
+    }
+    
+    input[type=range]::-ms-track {
+      width: 100%;
+      height: 8.4px;
+      cursor: pointer;
+      background: transparent;
+      border-color: transparent;
+      border-width: 16px 0;
+      color: transparent;
+    }
+    input[type=range]::-ms-fill-lower {
+      background: #2a6495;
+      border: 0.2px solid #010101;
+      border-radius: 2.6px;
+    }
+    input[type=range]:focus::-ms-fill-lower {
+      background: #3071a9;
+    }
+    input[type=range]::-ms-fill-upper {
+      background: #3071a9;
+      border: 0.2px solid #010101;
+      border-radius: 2.6px;
+    }
+    input[type=range]:focus::-ms-fill-upper {
+      background: #367ebd;
+    }
